@@ -61,30 +61,37 @@ public:
   ros::Time getTime() const;
   ros::Duration getPeriod() const;
 
-private:
-  VescInterface vesc_interface_;
-  VescServoController servo_controller_;
-
-  std::string joint_name_, command_mode_;
-
-  double command_;
-  double position_, velocity_, effort_;  // joint states
-
-  int num_motor_pole_pairs_;          // the number of motor pole pairs
-  double gear_ratio_, torque_const_;  // physical params.
-
+protected:
   hardware_interface::JointStateInterface joint_state_interface_;
   hardware_interface::PositionJointInterface joint_position_interface_;
   hardware_interface::VelocityJointInterface joint_velocity_interface_;
   hardware_interface::EffortJointInterface joint_effort_interface_;
+  double command_;
+  double position_, velocity_, effort_;  // joint states
 
   joint_limits_interface::JointLimits joint_limits_;
   joint_limits_interface::PositionJointSaturationInterface limit_position_interface_;
   joint_limits_interface::VelocityJointSaturationInterface limit_velocity_interface_;
   joint_limits_interface::EffortJointSaturationInterface limit_effort_interface_;
 
+private:
+  VescInterface vesc_interface_;
+  VescServoController servo_controller_;
   void packetCallback(const std::shared_ptr<VescPacket const>&);
   void errorCallback(const std::string&);
+  double displacement_;
+
+  std::string joint_name_, command_mode_;
+  int num_motor_pole_pairs_;          // the number of motor pole pairs
+  double gear_ratio_, torque_const_;  // physical params.
+
+  int PIDControl(double, double*, bool);
+  int FFControl(double, double*, bool);
+  double CounterTD(long, bool);
+  double kp_, ki_, kd_;
+  double duty_limiter_;
+  double duty_multiplier_;
+  bool vesc_ready_;
 };
 
 }  // namespace vesc_hw_interface
