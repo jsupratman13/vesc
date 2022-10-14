@@ -163,6 +163,10 @@ void VescHwInterface::read()
 void VescHwInterface::read(const ros::Time& time, const ros::Duration& period)
 {
   read();
+  if (!vesc_ready_)
+  {
+    displacement_prev_ = displacement_;
+  }
   double displacement_diff_ = displacement_ - displacement_prev_;
   if (fabs(displacement_diff_) > num_motor_pole_pairs_ / 4)
   {
@@ -235,7 +239,6 @@ int VescHwInterface::PIDControl(double target_vel, double* duty_out, bool init)
 {
   static double p_tmp = 0.0, i_tmp = 0.0, i_prev = 0.0, d_tmp = 0.0;
   const double motor_hall_ppr = static_cast<double>(num_motor_pole_pairs_);
-  const double motor_diameter = 0.1;
   const double i_duty_limit = 0.2;
   const double count_deviation_limit = static_cast<double>(num_motor_pole_pairs_);
   const double target_velocity_scaling_tmp = 1.0;  // 0.6
@@ -246,7 +249,8 @@ int VescHwInterface::PIDControl(double target_vel, double* duty_out, bool init)
     duty_limit = 1.0;
   }
 
-  static long pose_sens = static_cast<long>(displacement_);
+  static long pose_sens = 0;
+  pose_sens = static_cast<long>(displacement_);
   static int init_flag_tmp = 1;
   if (init)
   {
