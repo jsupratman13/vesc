@@ -330,14 +330,7 @@ int VescHwInterface::PIDControl(double target_vel, double* duty_out, bool init)
   // torque off when stop
   static int duty_zero_counter = 0;
   static bool stop_flag = false;
-  if (fabs(command_) < 0.0001)
-  {
-    stop_flag = true;
-  }
-  else
-  {
-    stop_flag = false;
-  }
+  stop_flag = fabs(command_) < 0.0001;
   if (!stop_flag)
   {
     duty_zero_counter = 0;
@@ -401,7 +394,7 @@ double VescHwInterface::CounterTD(long count_in, bool init)
                       static_cast<double>(counter_changed_log[0][1]);
   output = counter_td_tmp[0];
   if (fabs(output) > 100.0)
-  {  //変化量が異常だった場合0にする(エラー処理)
+  {  // 変化量が異常だった場合0にする(エラー処理)
     output = 0.0;
   }
   return output;
