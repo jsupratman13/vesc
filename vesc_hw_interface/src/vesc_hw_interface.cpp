@@ -121,8 +121,16 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
       nh.param<double>("kp", kp_, 0.0);
       nh.param<double>("ki", ki_, 0.0);
       nh.param<double>("kd", kd_, 0.0);
-      nh.param<double>("duty_multiplier", duty_multiplier_);
-      nh.param<double>("duty_limiter", duty_limiter_);
+      nh.param<double>("duty_multiplier", duty_multiplier_, 1.0);
+      nh.param<double>("duty_limiter", duty_limiter_, 1.0);
+      vesc_ready_ = false;
+      displacement_ = 0.0;
+      displacement_prev_ = 0.0;
+      ROS_INFO("kp %f", kp_);
+      ROS_INFO("ki %f", ki_);
+      ROS_INFO("kd %f", kd_);
+      ROS_INFO("duty_multiplier %f", duty_multiplier_);
+      ROS_INFO("duty_limiter %f", duty_limiter_);
     }
   }
   else if (command_mode_ == "effort" || command_mode_ == "effort_duty")
@@ -147,15 +155,20 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
 void VescHwInterface::read()
 {
   // requests joint states
-  // function `packetCallback` will be called after receiveing retrun packets
+  // function `packetCallback` will be called after receiving return packets
   vesc_interface_.requestState();
-
   return;
 }
 
 void VescHwInterface::read(const ros::Time& time, const ros::Duration& period)
 {
   read();
+  double displacement_diff_ = displacement_ - displacement_prev_;
+  if (fabs(displacement_diff_) > num_motor_pole_pairs_ / 4)
+  {
+    displacement_diff_ = 0;
+    vesc_ready_ = false;
+  }
   return;
 }
 
@@ -185,10 +198,11 @@ void VescHwInterface::write()
     double target_vel_in = 0.0;
     target_vel_in = command_;
     double duty_out = 0.0;
-    if (vesc_ready_)
+    if (!vesc_ready_)
     {
       this->PIDControl(target_vel_in, &duty_out, true);
-      // this->FFControl(target_vel_in, &duty_out, true);
+      this->FFControl(target_vel_in, &duty_out, true);
+      vesc_ready_ = true;
     }
     else
     {
@@ -473,6 +487,7 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const>& pa
 
     velocity_ = velocity_rpm / 60.0 * 2.0 * M_PI * gear_ratio_;  // unit: rad/s or m/s
     effort_ = current * torque_const_ / gear_ratio_;             // unit: Nm or N
+    displacement_prev_ = displacement_;
     displacement_ = values->getPosition();
   }
 

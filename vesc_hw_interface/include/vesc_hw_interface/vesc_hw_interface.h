@@ -80,6 +80,7 @@ private:
   void packetCallback(const std::shared_ptr<VescPacket const>&);
   void errorCallback(const std::string&);
   double displacement_;
+  double displacement_prev_;
 
   std::string joint_name_, command_mode_;
   int num_motor_pole_pairs_;          // the number of motor pole pairs
