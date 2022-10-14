@@ -205,7 +205,6 @@ void VescHwInterface::write()
     if (!vesc_ready_)
     {
       this->PIDControl(target_vel_in, &duty_out, true);
-      this->FFControl(target_vel_in, &duty_out, true);
       vesc_ready_ = true;
     }
     else
@@ -416,47 +415,6 @@ double VescHwInterface::CounterTD(long count_in, bool init)
     output = 0.0;
   }
   return output;
-}
-
-int VescHwInterface::FFControl(double target_v, double* duty_out, bool init)
-{
-  double a_v = 0.03;
-  double a_vdt = 0.0;
-  static double target_v_prev = 0;
-  static double target_vdt = 0.0;
-
-  if (init)
-  {
-    target_v_prev = 0;
-    target_vdt = 0;
-    *duty_out = 0.0;
-    return 0;
-  }
-  else
-  {
-    target_vdt = (target_v - target_v_prev) * 50.0;
-    target_v_prev = target_v;
-    double ff_tmp = 0;
-    ff_tmp = a_v * target_v + a_vdt * target_vdt;
-    if (ff_tmp > 1.0)
-    {
-      ff_tmp = 1.0;
-    }
-    else if (ff_tmp < -1.0)
-    {
-      ff_tmp = -1.0;
-    }
-    *duty_out += ff_tmp;
-    if (*duty_out > 1.0)
-    {
-      *duty_out = 1.0;
-    }
-    else if (*duty_out < -1.0)
-    {
-      *duty_out = -1.0;
-    }
-  }
-  return 0;
 }
 
 void VescHwInterface::write(const ros::Time& time, const ros::Duration& period)

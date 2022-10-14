@@ -87,7 +87,6 @@ private:
   double gear_ratio_, torque_const_;  // physical params.
 
   int PIDControl(double, double*, bool);
-  int FFControl(double, double*, bool);
   double CounterTD(long, bool);
   double kp_, ki_, kd_;
   double duty_limiter_;
