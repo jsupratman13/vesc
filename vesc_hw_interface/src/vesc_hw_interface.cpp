@@ -135,19 +135,8 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
 
     if (command_mode_ == "velocity_duty")
     {
-      nh.param<double>("kp", kp_, 0.0);
-      nh.param<double>("ki", ki_, 0.0);
-      nh.param<double>("kd", kd_, 0.0);
-      nh.param<double>("duty_multiplier", duty_multiplier_, 1.0);
-      nh.param<double>("duty_limiter", duty_limiter_, 1.0);
-      vesc_ready_ = false;
-      displacement_ = 0.0;
-      displacement_prev_ = 0.0;
-      ROS_INFO("kp %f", kp_);
-      ROS_INFO("ki %f", ki_);
-      ROS_INFO("kd %f", kd_);
-      ROS_INFO("duty_multiplier %f", duty_multiplier_);
-      ROS_INFO("duty_limiter %f", duty_limiter_);
+      initialize_vesc_ = true;
+      wheel_controller_.init(nh, &vesc_interface_, 50.0);
     }
   }
   else if (command_mode_ == "effort" || command_mode_ == "effort_duty")
@@ -182,27 +171,27 @@ void VescHwInterface::read()
   // requests joint states
   // function `packetCallback` will be called after receiving return packets
   vesc_interface_.requestState();
-  return;
-}
-
-void VescHwInterface::read(const ros::Time& time, const ros::Duration& period)
-{
-  read();
-  if (!vesc_ready_)
+  if (initialize_vesc_)
   {
-    displacement_prev_ = displacement_;
+    position_pulse_prev_ = position_pulse_;
   }
-  double displacement_diff = displacement_ - displacement_prev_;
+  double displacement_diff = position_pulse_ - position_pulse_prev_;
   if (fabs(displacement_diff) > num_motor_pole_pairs_ / 4)
   {
     displacement_diff = 0;
-    vesc_ready_ = false;
+    initialize_vesc_ = true;
   }
   if ((joint_type_ == "revolute") || (joint_type_ == "continuous"))
   {
     rad_ += displacement_diff / num_motor_pole_pairs_ * 2.0 * M_PI;
     position_ = angles::normalize_angle(rad_);
   }
+  return;
+}
+
+void VescHwInterface::read(const ros::Time& time, const ros::Duration& period)
+{
+  read();
   return;
 }
 
@@ -229,19 +218,8 @@ void VescHwInterface::write()
   }
   else if (command_mode_ == "velocity_duty")
   {
-    double target_vel_in = 0.0;
-    target_vel_in = command_;
-    double duty_out = 0.0;
-    if (!vesc_ready_)
-    {
-      this->PIDControl(target_vel_in, &duty_out, true);
-      vesc_ready_ = true;
-    }
-    else
-    {
-      this->PIDControl(target_vel_in, &duty_out, false);
-    }
-    vesc_interface_.setDutyCycle(duty_out);
+    wheel_controller_.control(command_, position_pulse_, initialize_vesc_);
+    initialize_vesc_ = fabs(command_) < 0.0001;
   }
   else if (command_mode_ == "effort")
   {
@@ -262,189 +240,6 @@ void VescHwInterface::write()
     vesc_interface_.setDutyCycle(command_);
   }
   return;
-}
-
-int VescHwInterface::PIDControl(double target_vel, double* duty_out, bool init)
-{
-  static double p_tmp = 0.0, i_tmp = 0.0, i_prev = 0.0, d_tmp = 0.0;
-  const double motor_hall_ppr = static_cast<double>(num_motor_pole_pairs_);
-  const double i_duty_limit = 0.2;
-  const double count_deviation_limit = static_cast<double>(num_motor_pole_pairs_);
-  const double target_velocity_scaling_tmp = 1.0;  // 0.6
-
-  double duty_limit = fabs(duty_limiter_);
-  if (duty_limit > 1.0)
-  {
-    duty_limit = 1.0;
-  }
-
-  static long pose_sens = 0;
-  pose_sens = static_cast<long>(displacement_);
-  static int init_flag_tmp = 1;
-  if (init)
-  {
-    init_flag_tmp = 1;
-  }
-
-  // initialize pid
-  static double pose_target = 0;
-  if (init_flag_tmp == 1)
-  {
-    pose_target = static_cast<double>(pose_sens);
-    i_tmp = 0.0;
-    p_tmp = 0.0;
-    init_flag_tmp = 0;
-    d_tmp = 0.0;
-    this->CounterTD(pose_sens, true);
-    *duty_out = 0.0;
-  }
-  else
-  {
-    pose_target += target_velocity_scaling_tmp * (target_vel * motor_hall_ppr / (2 * M_PI) / 50.0);
-  }
-
-  // cycle through
-  if (pose_target > static_cast<double>(LONG_MAX))
-  {
-    pose_target += static_cast<double>(LONG_MIN);
-  }
-  else if (pose_target < static_cast<double>(LONG_MIN))
-  {
-    pose_target += static_cast<double>(LONG_MAX);
-  }
-
-  // pid controller
-  // error limit
-  if (static_cast<long>(pose_target) - static_cast<long>(pose_sens) > static_cast<long>(count_deviation_limit))
-  {
-    pose_target = static_cast<double>(pose_sens) + count_deviation_limit;
-  }
-  else if (static_cast<long>(pose_target) - static_cast<long>(pose_sens) < -static_cast<long>(count_deviation_limit))
-  {
-    pose_target = static_cast<double>(pose_sens) - count_deviation_limit;
-  }
-
-  double pose_target_diff = target_vel;
-  double sens_target_diff = this->CounterTD(static_cast<long>(pose_sens), false) * 2.0 * M_PI / motor_hall_ppr * 50.0;
-
-  d_tmp = pose_target_diff - sens_target_diff;
-  p_tmp = static_cast<double>(static_cast<long>(pose_target) - static_cast<long>(pose_sens));
-  i_prev = i_tmp;
-  i_tmp += (p_tmp / 50.0);
-  double duty_out_tmp;
-  duty_out_tmp = (kp_ * p_tmp + ki_ * i_tmp + kd_ * d_tmp);
-
-  if (duty_out_tmp > duty_limit)
-  {
-    duty_out_tmp = duty_limit;
-    if (i_tmp > i_prev)
-    {  // anti reset wind up
-      i_tmp = i_prev;
-      duty_out_tmp = (kp_ * p_tmp + ki_ * i_tmp + kd_ * d_tmp);
-    }
-  }
-  else if (duty_out_tmp < -duty_limit)
-  {
-    duty_out_tmp = -duty_limit;
-    if (i_tmp < i_prev)
-    {  // anti reset wind up
-      i_tmp = i_prev;
-      duty_out_tmp = (kp_ * p_tmp + ki_ * i_tmp + kd_ * d_tmp);
-    }
-  }
-  if (ki_ * i_tmp > i_duty_limit)
-  {  // anti reset wind up
-    i_tmp = i_duty_limit / ki_;
-  }
-  else if (ki_ * i_tmp < -i_duty_limit)
-  {
-    i_tmp = -i_duty_limit / ki_;
-  }
-
-  if (init_flag_tmp == 0)
-  {
-    *duty_out = duty_multiplier_ * duty_out_tmp;
-  }
-  if (*duty_out > 1.0)
-  {
-    *duty_out = 1.0;
-  }
-  else if (*duty_out < -1.0)
-  {
-    *duty_out = -1.0;
-  }
-
-  // torque off when stop
-  static int duty_zero_counter = 0;
-  static bool stop_flag = false;
-  stop_flag = fabs(command_) < 0.0001;
-  if (!stop_flag)
-  {
-    duty_zero_counter = 0;
-  }
-  else if (duty_zero_counter < 10)
-  {
-    duty_zero_counter++;
-  }
-  if (duty_zero_counter == 10)
-  {
-    *duty_out = 0.0;
-    vesc_ready_ = false;
-  }
-  return 0;
-}
-
-double VescHwInterface::CounterTD(long count_in, bool init)
-{
-  static uint16_t counter_changed_log[10][2] = {};
-  static double counter_td_tmp[10] = {};
-  static uint16_t counter_changed_single = 1;
-  int i = 0;
-  double output = 0.0;
-  if (init)
-  {
-    counter_changed_single = 1;
-    for (i = 0; i < 10; i++)
-    {
-      counter_changed_log[i][0] = static_cast<uint16_t>(count_in);
-      counter_changed_log[i][1] = 100;
-      counter_td_tmp[i] = 0;
-    }
-    return 0.0;
-  }
-  if (counter_changed_log[0][0] != static_cast<uint16_t>(count_in))
-  {
-    for (i = 1; i < 10; i++)
-    {
-      counter_changed_log[10 - i][0] = counter_changed_log[9 - i][0];
-    }
-    counter_changed_log[0][0] = static_cast<uint16_t>(count_in);
-    counter_changed_log[0][1] = counter_changed_single;
-    counter_changed_single = 1;
-  }
-  else
-  {
-    if (counter_changed_single > counter_changed_log[0][1])
-    {
-      counter_changed_log[0][1] = counter_changed_single;
-    }
-    if (counter_changed_single < 100)
-    {
-      counter_changed_single++;
-    }
-  }
-  for (i = 1; i < 10; i++)
-  {
-    counter_td_tmp[10 - i] = counter_td_tmp[9 - i];
-  }
-  counter_td_tmp[0] = static_cast<double>(counter_changed_log[0][0] - counter_changed_log[1][0]) /
-                      static_cast<double>(counter_changed_log[0][1]);
-  output = counter_td_tmp[0];
-  if (fabs(output) > 100.0)
-  {  // 変化量が異常だった場合0にする(エラー処理)
-    output = 0.0;
-  }
-  return output;
 }
 
 void VescHwInterface::write(const ros::Time& time, const ros::Duration& period)
@@ -471,18 +266,17 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const>& pa
 
     const double current = values->getMotorCurrent();
     const double velocity_rpm = values->getVelocityERPM() / static_cast<double>(num_motor_pole_pairs_);
-    const double position_pulse = values->getPosition();
+    position_pulse_prev_ = position_pulse_;
+    position_pulse_ = values->getPosition();
 
     // 3.0 represents the number of hall sensors
     if (joint_type_ == "prismatic")
     {
-      position_ = position_pulse / num_motor_pole_pairs_ / 3.0 * gear_ratio_ -
+      position_ = position_pulse_ / num_motor_pole_pairs_ / 3.0 * gear_ratio_ -
                   servo_controller_.getZeroPosition();  // unit: rad or m
     }
     velocity_ = velocity_rpm / 60.0 * 2.0 * M_PI * gear_ratio_;  // unit: rad/s or m/s
     effort_ = current * torque_const_ / gear_ratio_;             // unit: Nm or N
-    displacement_prev_ = displacement_;
-    displacement_ = values->getPosition();
   }
 
   return;
