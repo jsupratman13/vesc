@@ -82,9 +82,10 @@ private:
   double displacement_;
   double displacement_prev_;
 
-  std::string joint_name_, command_mode_;
+  std::string joint_name_, command_mode_, joint_type_;
   int num_motor_pole_pairs_;          // the number of motor pole pairs
   double gear_ratio_, torque_const_;  // physical params.
+  double rad_;
 
   int PIDControl(double, double*, bool);
   double CounterTD(long, bool);

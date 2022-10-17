@@ -15,7 +15,9 @@
  ********************************************************************/
 
 #include "vesc_hw_interface/vesc_hw_interface.h"
+#include <urdf_model/types.h>
 #include <cmath>
+#include "angles/angles.h"
 
 namespace vesc_hw_interface
 {
@@ -59,6 +61,7 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
   nh.param<std::string>("robot_description_name", robot_description_name, "/robot_description");
 
   // parses the urdf
+  joint_type_ = "";
   if (nh.getParam(robot_description_name, robot_description))
   {
     const urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(robot_description);
@@ -68,6 +71,19 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
     {
       ROS_INFO("Joint limits are loaded");
     }
+
+    switch (urdf_joint->type)
+    {
+      case urdf::Joint::REVOLUTE:
+        joint_type_ = "revolute";
+        break;
+      case urdf::Joint::CONTINUOUS:
+        joint_type_ = "continuous";
+        break;
+      case urdf::Joint::PRISMATIC:
+        joint_type_ = "prismatic";
+        break;
+    }
   }
 
   // initializes commands and states
@@ -75,6 +91,7 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
   position_ = 0.0;
   velocity_ = 0.0;
   effort_ = 0.0;
+  rad_ = 0.0;
 
   // reads system parameters
   nh.param<double>("gear_ratio", gear_ratio_, 1.0);
@@ -87,7 +104,7 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
   // reads driving mode setting
   // - assigns an empty string if param. is not found
   nh.param<std::string>("command_mode", command_mode_, "");
-  ROS_INFO("mode: %s", command_mode_.data());
+  ROS_INFO("command mode: %s", command_mode_.data());
 
   // registers a state handle and its interface
   hardware_interface::JointStateHandle state_handle(joint_name_, &position_, &velocity_, &effort_);
@@ -149,6 +166,14 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
     return false;
   }
 
+  // reads joint type setting
+  nh.getParam("joint_type", joint_type_);
+  ROS_INFO("joint type: %s", joint_type_.data());
+  if ((joint_type_ != "revolute") && (joint_type_ != "continuous") && (joint_type_ != "prismatic"))
+  {
+    ROS_ERROR("Verify your joint type");
+    return false;
+  }
   return true;
 }
 
@@ -167,11 +192,16 @@ void VescHwInterface::read(const ros::Time& time, const ros::Duration& period)
   {
     displacement_prev_ = displacement_;
   }
-  double displacement_diff_ = displacement_ - displacement_prev_;
-  if (fabs(displacement_diff_) > num_motor_pole_pairs_ / 4)
+  double displacement_diff = displacement_ - displacement_prev_;
+  if (fabs(displacement_diff) > num_motor_pole_pairs_ / 4)
   {
-    displacement_diff_ = 0;
+    displacement_diff = 0;
     vesc_ready_ = false;
+  }
+  if ((joint_type_ == "revolute") || (joint_type_ == "continuous"))
+  {
+    rad_ += displacement_diff / num_motor_pole_pairs_ * 2.0 * M_PI;
+    position_ = angles::normalize_angle(rad_);
   }
   return;
 }
@@ -444,9 +474,11 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const>& pa
     const double position_pulse = values->getPosition();
 
     // 3.0 represents the number of hall sensors
-    position_ = position_pulse / num_motor_pole_pairs_ / 3.0 * gear_ratio_ -
-                servo_controller_.getZeroPosition();  // unit: rad or m
-
+    if (joint_type_ == "prismatic")
+    {
+      position_ = position_pulse / num_motor_pole_pairs_ / 3.0 * gear_ratio_ -
+                  servo_controller_.getZeroPosition();  // unit: rad or m
+    }
     velocity_ = velocity_rpm / 60.0 * 2.0 * M_PI * gear_ratio_;  // unit: rad/s or m/s
     effort_ = current * torque_const_ / gear_ratio_;             // unit: Nm or N
     displacement_prev_ = displacement_;
