@@ -184,7 +184,11 @@ void VescHwInterface::read()
   if ((joint_type_ == "revolute") || (joint_type_ == "continuous"))
   {
     rad_ += displacement_diff / num_motor_pole_pairs_ * 2.0 * M_PI;
-    position_ = angles::normalize_angle(rad_);
+    if (joint_type_ == "revolute")
+    {
+      rad_ = angles::normalize_angle(rad_);
+    }
+    position_ = rad_;
   }
   return;
 }
@@ -269,9 +273,8 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const>& pa
     position_pulse_prev_ = position_pulse_;
     position_pulse_ = values->getPosition();
 
-    // 3.0 represents the number of hall sensors
     if (joint_type_ == "prismatic")
-    {
+    {  // 3.0 represents the number of hall sensors
       position_ = position_pulse_ / num_motor_pole_pairs_ / 3.0 * gear_ratio_ -
                   servo_controller_.getZeroPosition();  // unit: rad or m
     }
