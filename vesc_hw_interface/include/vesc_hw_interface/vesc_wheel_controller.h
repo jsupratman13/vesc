@@ -28,7 +28,7 @@ using vesc_driver::VescInterface;
 class VescWheelController
 {
 public:
-  void init(ros::NodeHandle nh, VescInterface* vesc_interface, const double control_frequency);
+  void init(ros::NodeHandle nh, VescInterface* vesc_interface);
   void control(const double target_velocity, const double current_pulse, bool initialize);
   void setControlFrequency(const double frequency);
 

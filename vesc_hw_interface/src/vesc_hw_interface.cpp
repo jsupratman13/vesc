@@ -136,7 +136,8 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
     if (command_mode_ == "velocity_duty")
     {
       initialize_vesc_ = true;
-      wheel_controller_.init(nh, &vesc_interface_, 1.0 / this->getPeriod().toSec());
+      wheel_controller_.init(nh, &vesc_interface_);
+      wheel_controller_.setControlFrequency(1.0 / this->getPeriod().toSec());
     }
   }
   else if (command_mode_ == "effort" || command_mode_ == "effort_duty")

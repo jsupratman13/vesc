@@ -19,7 +19,7 @@
 
 namespace vesc_hw_interface
 {
-void VescWheelController::init(ros::NodeHandle nh, VescInterface* interface_ptr, const double control_frequency)
+void VescWheelController::init(ros::NodeHandle nh, VescInterface* interface_ptr)
 {
   if (interface_ptr == NULL)
   {
@@ -43,8 +43,8 @@ void VescWheelController::init(ros::NodeHandle nh, VescInterface* interface_ptr,
   ROS_INFO("motor/duty_limiter: %f", duty_limiter_);
   ROS_INFO("antiwindup: %s", antiwindup_ ? "true" : "false");
 
-  ctrl_frequency_ = control_frequency;
   nh.param<int>("num_motor_pole_pairs", num_motor_pole_pairs_, 1.0);
+  ctrl_frequency_ = 50.0;
 }
 
 void VescWheelController::control(const double target_velocity, const double current_pulse, bool initialize)
