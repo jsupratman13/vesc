@@ -136,7 +136,7 @@ bool VescHwInterface::init(ros::NodeHandle& nh_root, ros::NodeHandle& nh)
     if (command_mode_ == "velocity_duty")
     {
       initialize_vesc_ = true;
-      wheel_controller_.init(nh, &vesc_interface_, 50.0);
+      wheel_controller_.init(nh, &vesc_interface_, 1.0 / this->getPeriod().toSec());
     }
   }
   else if (command_mode_ == "effort" || command_mode_ == "effort_duty")
@@ -195,6 +195,10 @@ void VescHwInterface::read()
 
 void VescHwInterface::read(const ros::Time& time, const ros::Duration& period)
 {
+  if (command_mode_ == "velocity_duty")
+  {
+    wheel_controller_.setControlFrequency(1.0 / period.toSec());
+  }
   read();
   return;
 }
@@ -248,6 +252,10 @@ void VescHwInterface::write()
 
 void VescHwInterface::write(const ros::Time& time, const ros::Duration& period)
 {
+  if (command_mode_ == "velocity_duty")
+  {
+    wheel_controller_.setControlFrequency(1.0 / period.toSec());
+  }
   write();
   return;
 }

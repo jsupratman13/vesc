@@ -19,7 +19,7 @@
 
 namespace vesc_hw_interface
 {
-void VescWheelController::init(ros::NodeHandle nh, VescInterface* interface_ptr, double control_frequency)
+void VescWheelController::init(ros::NodeHandle nh, VescInterface* interface_ptr, const double control_frequency)
 {
   if (interface_ptr == NULL)
   {
@@ -126,6 +126,11 @@ void VescWheelController::control(const double target_velocity, const double cur
   // limit duty value
   duty = std::clamp(duty, -duty_limiter_, duty_limiter_);
   interface_ptr_->setDutyCycle(fabs(target_velocity) < 0.0001 ? 0.0 : duty);
+}
+
+void VescWheelController::setControlFrequency(const double frequency)
+{
+  ctrl_frequency_ = frequency;
 }
 
 double VescWheelController::counterTD(const double count_in, bool initialize)
