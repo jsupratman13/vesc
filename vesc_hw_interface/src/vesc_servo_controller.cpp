@@ -177,7 +177,11 @@ void VescServoController::init(hardware_interface::HardwareInfo& info,
   if (use_endstop)
   {
     rclcpp::NodeOptions options;
-    options.arguments({ "--ros-args", "-r", "__node:=" + info.name + "_endstop" });
+    std::string endstop_receiver_name = info.name + "_endstop_receiver";
+    std::transform(
+      endstop_receiver_name.begin(), endstop_receiver_name.end(), endstop_receiver_name.begin(),
+      [](unsigned char c) { return std::tolower(c); });
+    options.arguments({"--ros-args", "-r", "__node:=" + endstop_receiver_name});
     node_ = rclcpp::Node::make_shared("_", options);
     endstop_sub_ = node_->create_subscription<std_msgs::msg::Bool>(
         "endstop", rclcpp::SensorDataQoS(),
