@@ -182,7 +182,7 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State& /*pr
     return CallbackReturn::FAILURE;
   }
 
-  if (command_mode_ == hardware_interface::HW_IF_POSITION)
+  if (command_mode_ == hardware_interface::HW_IF_POSITION || command_mode_ == "position_duty")
   {
     auto upper_limit = 0.0;
     auto lower_limit = 0.0;
@@ -202,30 +202,34 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State& /*pr
     {
       screw_lead_ = std::stod(info_.hardware_parameters["screw_lead"]);
     }
-    servo_controller_.init(info_, vesc_interface_, gear_ratio_, torque_const_, num_rotor_poles_, num_hall_sensors_,
-                           joint_type_ == "revolute"   ? 0 :
-                           joint_type_ == "continuous" ? 1 :
-                                                         2,
-                           screw_lead_, upper_limit, lower_limit);
-    bool calibration = true;
-    if (info_.hardware_parameters.find("servo/calibration") != info_.hardware_parameters.end())
+
+    if (command_mode_ == "position_duty")
     {
-      calibration = info_.hardware_parameters["servo/calibration"] == "true";
-    }
-    if (calibration)
-    {
-      while (rclcpp::ok())
+      servo_controller_.init(info_, vesc_interface_, gear_ratio_, torque_const_, num_rotor_poles_, num_hall_sensors_,
+                            joint_type_ == "revolute"   ? 0 :
+                            joint_type_ == "continuous" ? 1 :
+                                                          2,
+                            screw_lead_, upper_limit, lower_limit);
+      bool calibration = true;
+      if (info_.hardware_parameters.find("servo/calibration") != info_.hardware_parameters.end())
       {
-        vesc_interface_->requestState();
-        servo_controller_.spinSensorData();
-        if (servo_controller_.calibrate())
-          break;
-        rclcpp::sleep_for(std::chrono::milliseconds(10));
+        calibration = info_.hardware_parameters["servo/calibration"] == "true";
       }
+      if (calibration)
+      {
+        while (rclcpp::ok())
+        {
+          vesc_interface_->requestState();
+          servo_controller_.spinSensorData();
+          if (servo_controller_.calibrate())
+            break;
+          rclcpp::sleep_for(std::chrono::milliseconds(10));
+        }
+      }
+      position_ = servo_controller_.getPositionSens();
+      velocity_ = servo_controller_.getVelocitySens();
+      effort_ = servo_controller_.getEffortSens();
     }
-    position_ = servo_controller_.getPositionSens();
-    velocity_ = servo_controller_.getVelocitySens();
-    effort_ = servo_controller_.getEffortSens();
   }
 
   if (command_mode_ == "velocity_duty")
@@ -306,7 +310,7 @@ hardware_interface::return_type VescHwInterface::read(const rclcpp::Time& /*time
 {
   // requests joint states
   // function `packetCallback` will be called after receiving return packets
-  if (command_mode_ == "position")
+  if (command_mode_ == "position_duty")
   {
     // For PID control, request packets are automatically sent in the control cycle.
     // The latest data is read in this function.
@@ -344,7 +348,7 @@ hardware_interface::return_type VescHwInterface::write(const rclcpp::Time& /*tim
   if (std::isnan(command) && command_mode_ != "position") {
     command = 0.0;
   }
-  if (command_mode_ == "position")
+  if (command_mode_ == "position_duty")
   {
     // Limit the speed using the parameters listed in xacro
     // limit_position_interface_.enforceLimits(period);
@@ -353,6 +357,19 @@ hardware_interface::return_type VescHwInterface::write(const rclcpp::Time& /*tim
     // executes PID control
     servo_controller_.setTargetPosition(command);
     servo_controller_.control(1.0 / period.seconds());
+  }
+  else if (command_mode_ == "position")
+  {
+    auto command_step = command / gear_ratio_ * (num_hall_sensors_ * num_rotor_poles_);
+    if (joint_type_ == "revolute")
+    {
+      command_step = command_step / (2.0 * M_PI);
+    }
+    else if (joint_type_ == "prismatic")
+    {
+      command_step = command_step / screw_lead_;
+    }
+    vesc_interface_->setPosition(command_step);
   }
   else if (command_mode_ == "velocity")
   {
@@ -407,7 +424,7 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const>& pa
     RCLCPP_WARN(rclcpp::get_logger("VescHwInterface"), "[VescHwInterface::packetCallback]packetCallcack called, but "
                                                        "no packet received");
   }
-  if (command_mode_ == "position")
+  if (command_mode_ == "position_duty")
   {
     servo_controller_.updateSensor(packet);
   }
@@ -423,9 +440,20 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const>& pa
     const double velocity_rpm = values->getVelocityERPM() / static_cast<double>(num_rotor_poles_ / 2);
     const double steps = values->getPosition();
 
-    position_ = steps / (num_hall_sensors_ * num_rotor_poles_) * gear_ratio_;  // unit: rad or m
-    velocity_ = velocity_rpm / 60.0 * 2.0 * M_PI * gear_ratio_;                // unit: rad/s or m/s
-    effort_ = current * torque_const_ / gear_ratio_;                           // unit: Nm or N
+    position_ = steps / (num_hall_sensors_ * num_rotor_poles_) * gear_ratio_;  // unit: revolution
+    velocity_ = velocity_rpm * gear_ratio_;  // unit: rpm
+    effort_ = current * torque_const_ / gear_ratio_;  // unit: Nm or N
+  
+    if (joint_type_ == "revolute" || joint_type_ == "continuous")
+    {
+      position_ = position_ * 2.0 * M_PI;  // unit: rad
+      velocity_ = velocity_ / 60.0 * 2.0 * M_PI;  // unit: rad/s
+    }
+    else if (joint_type_ == "prismatic")
+    {
+      position_ = position_ * screw_lead_;  // unit: m
+      velocity_ = velocity_ / 60.0 * screw_lead_;  // unit: m/s
+    }
   }
 
   return;
