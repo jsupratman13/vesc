@@ -187,25 +187,25 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State & /*p
       screw_lead_ = std::stod(info_.hardware_parameters["screw_lead"]);
     }
 
+    servo_controller_.init(
+      info_, vesc_interface_, gear_ratio_, torque_const_, num_rotor_poles_, num_hall_sensors_,
+      joint_type_ == "revolute"     ? 0
+      : joint_type_ == "continuous" ? 1
+                                    : 2,
+      screw_lead_, upper_limit, lower_limit);
+    bool calibration = true;
+    if (info_.hardware_parameters.find("servo/calibration") != info_.hardware_parameters.end()) {
+      calibration = info_.hardware_parameters["servo/calibration"] == "true";
+    }
+    if (calibration) {
+      while (rclcpp::ok()) {
+        vesc_interface_->requestState();
+        servo_controller_.spinSensorData();
+        if (servo_controller_.calibrate()) break;
+        rclcpp::sleep_for(std::chrono::milliseconds(10));
+      }
+    }
     if (command_mode_ == "position_duty") {
-      servo_controller_.init(
-        info_, vesc_interface_, gear_ratio_, torque_const_, num_rotor_poles_, num_hall_sensors_,
-        joint_type_ == "revolute"     ? 0
-        : joint_type_ == "continuous" ? 1
-                                      : 2,
-        screw_lead_, upper_limit, lower_limit);
-      bool calibration = true;
-      if (info_.hardware_parameters.find("servo/calibration") != info_.hardware_parameters.end()) {
-        calibration = info_.hardware_parameters["servo/calibration"] == "true";
-      }
-      if (calibration) {
-        while (rclcpp::ok()) {
-          vesc_interface_->requestState();
-          servo_controller_.spinSensorData();
-          if (servo_controller_.calibrate()) break;
-          rclcpp::sleep_for(std::chrono::milliseconds(10));
-        }
-      }
       position_ = servo_controller_.getPositionSens();
       velocity_ = servo_controller_.getVelocitySens();
       effort_ = servo_controller_.getEffortSens();
@@ -404,6 +404,7 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
       position_ = position_ * screw_lead_;         // unit: m
       velocity_ = velocity_ / 60.0 * screw_lead_;  // unit: m/s
     }
+    position_ -= servo_controller_.getZeroPosition();
   }
 
   return;
