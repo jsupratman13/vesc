@@ -18,7 +18,6 @@
 
 import pathlib
 
-import xacro
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import GroupAction
@@ -27,6 +26,7 @@ from launch.launch_context import LaunchContext
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+import xacro
 
 
 def launch_setup(context: LaunchContext, *args, **kwargs) -> list:
@@ -53,7 +53,14 @@ def launch_setup(context: LaunchContext, *args, **kwargs) -> list:
              arguments=['--controller-manager', 'controller_manager', 'joint_position_controller'])
     ])
 
-    return [control_node, controllers]
+    robot_state = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='both',
+        parameters=[robot_description],
+    )
+
+    return [control_node, controllers, robot_state]
 
 
 def generate_launch_description() -> LaunchDescription:
