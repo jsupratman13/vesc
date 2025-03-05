@@ -34,6 +34,7 @@
  ********************************************************************/
 
 #include "vesc_driver/vesc_packet.hpp"
+#include "vesc_driver/data_map.hpp"
 
 namespace vesc_driver
 {
@@ -270,21 +271,21 @@ double VescPacketValues::getConsumedPower() const
  **/
 double VescPacketValues::getInputPower() const
 {
-  return readBuffer(WATT_HOURS, 4) / 10000.0;
+  return readBuffer(WATT_HOURS_CHARGED, 4) / 10000.0;
 }
 
 /**
- * @brief Gets the current position
- * @return The current position
+ * @brief Gets the current tachometer value
+ * @return The current tachometer value
  **/
-double VescPacketValues::getPosition() const
+double VescPacketValues::getTachometer() const
 {
   return readBuffer(TACHOMETER, 4);
 }
 
 /**
- * @brief Gets absolute displacement
- * @return Absolute displacement
+ * @brief Gets absolute displacement in tachometer
+ * @return Absolute displacement in tachometer
  **/
 double VescPacketValues::getDisplacement() const
 {
@@ -298,6 +299,24 @@ double VescPacketValues::getDisplacement() const
 int VescPacketValues::getFaultCode() const
 {
   return static_cast<int32_t>(*(payload_end_.first + FAULT_CODE));
+}
+
+/**
+ * @brief Gets the position in deg.
+ * @return The current position between 0 to 360 deg.
+ **/
+ double VescPacketValues::getPosition() const
+ {
+   return readBuffer(PID_POS, 4);
+ }
+
+ /**
+ * @brief Gets controller id
+ * @return Fault code
+ **/
+int VescPacketValues::getControllerID() const
+{
+  return static_cast<int32_t>(*(payload_end_.first + CONTROLLER_ID));
 }
 
 /**

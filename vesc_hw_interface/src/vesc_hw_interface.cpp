@@ -168,14 +168,14 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State & /*p
     return CallbackReturn::FAILURE;
   }
 
+  upper_limit_ = 0.0;
+  lower_limit_ = 0.0;
   if (command_mode_ == hardware_interface::HW_IF_POSITION || command_mode_ == "position_duty") {
-    auto upper_limit = 0.0;
-    auto lower_limit = 0.0;
     // parse URDF for limit parameters
     auto joint_limit_itr = info_.limits.find(joint_name_);
     if (joint_limit_itr != info_.limits.end()) {
-      upper_limit = joint_limit_itr->second.max_position;
-      lower_limit = joint_limit_itr->second.min_position;
+      upper_limit_ = joint_limit_itr->second.max_position;
+      lower_limit_ = joint_limit_itr->second.min_position;
     } else {
       RCLCPP_WARN(
         rclcpp::get_logger("VescHwInterface"), "No joint position limits found in URDF, using default limits");
@@ -192,7 +192,7 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State & /*p
       joint_type_ == "revolute"     ? 0
       : joint_type_ == "continuous" ? 1
                                     : 2,
-      screw_lead_, upper_limit, lower_limit);
+      screw_lead_, upper_limit_, lower_limit_);
     bool calibration = true;
     if (info_.hardware_parameters.find("servo/calibration") != info_.hardware_parameters.end()) {
       calibration = info_.hardware_parameters["servo/calibration"] == "true";
@@ -391,19 +391,20 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
 
     const double current = values->getMotorCurrent();
     const double velocity_rpm = values->getVelocityERPM() / static_cast<double>(num_rotor_poles_ / 2);
-    const double steps = values->getPosition();
+    const double position_norm = values->getPosition();
 
-    position_ = steps / (num_hall_sensors_ * num_rotor_poles_) * gear_ratio_;  // unit: revolution
-    velocity_ = velocity_rpm * gear_ratio_;                                    // unit: rpm
-    effort_ = current * torque_const_ / gear_ratio_;                           // unit: Nm or N
+    position_ = position_norm * gear_ratio_;          // unit: deg
+    velocity_ = velocity_rpm * gear_ratio_;           // unit: rpm
+    effort_ = current * torque_const_ / gear_ratio_;  // unit: Nm or N
 
     if (joint_type_ == "revolute" || joint_type_ == "continuous") {
-      position_ = position_ * 2.0 * M_PI;         // unit: rad
+      position_ = position_ * M_PI / 180.0;       // unit: rad
       velocity_ = velocity_ / 60.0 * 2.0 * M_PI;  // unit: rad/s
     } else if (joint_type_ == "prismatic") {
-      position_ = position_ * screw_lead_;         // unit: m
-      velocity_ = velocity_ / 60.0 * screw_lead_;  // unit: m/s
+      position_ = (position_ / 360.0) * screw_lead_;  // unit: m
+      velocity_ = velocity_ / 60.0 * screw_lead_;     // unit: m/s
     }
+    position_ = lower_limit_ + position_ * (upper_limit_ - lower_limit_); // map to joint limits
     position_ -= servo_controller_.getZeroPosition();
   }
 

@@ -190,9 +190,11 @@ public:
   double getInputCharge() const;
   double getConsumedPower() const;
   double getInputPower() const;
-  double getPosition() const;
+  double getTachometer() const;
   double getDisplacement() const;
   int getFaultCode() const;
+  double getPosition() const;
+  int getControllerID() const;
 
 private:
   double readBuffer(const uint8_t, const uint8_t) const;
