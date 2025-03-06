@@ -307,7 +307,7 @@ int VescPacketValues::getFaultCode() const
  **/
  double VescPacketValues::getPosition() const
  {
-   return readBuffer(PID_POS, 4);
+   return readBuffer(PID_POS, 4) / 1000000.0;
  }
 
  /**
