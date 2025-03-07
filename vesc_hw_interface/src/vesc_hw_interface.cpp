@@ -416,7 +416,11 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
     //   position_ = position_norm - homing_offset_ + 360.0;
     // }
     // position_ = std::fmod(position_, 360.0);
-    position_ = std::fmod(position_norm - homing_offset_ + 360.0, 360.0);
+
+    auto delta = std::fmod(position_norm - homing_offset_ + 360.0, 360.0);
+    if (delta > 180.0) {
+      delta -= 360.0;
+    }
     // position_ = position_norm - homing_offset_;
 
     std::cout << "---" << std::endl;
@@ -431,10 +435,10 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
       position_ = position_ * M_PI / 180.0;       // unit: rad
       velocity_ = velocity_ / 60.0 * 2.0 * M_PI;  // unit: rad/s
     } else if (joint_type_ == "prismatic") {
-      position_ = (position_ / 180.0) * screw_lead_;  // unit: m
+      // position_ = (position_ / 180.0) * screw_lead_;  // unit: m
       velocity_ = velocity_ / 60.0 * screw_lead_;     // unit: m/s
     }
-    position_ = homing_position_ + position_ * (upper_limit_ - lower_limit_);  // map to joint limits
+    position_ = homing_position_ + delta * (upper_limit_ - lower_limit_) / 180.0;  // map to joint limits
     // position_ -= servo_controller_.getZeroPosition();
   }
 
