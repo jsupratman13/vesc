@@ -49,6 +49,8 @@ CallbackReturn VescHwInterface::on_init(const hardware_interface::HardwareInfo &
   position_ = 0.0;
   velocity_ = 0.0;
   effort_ = 0.0;
+  init_ = false;
+  homing_offset_ = 0.0;
 
   // reads system parameters
   port_ = info_.hardware_parameters["port"];
@@ -179,6 +181,10 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State & /*p
     } else {
       RCLCPP_WARN(
         rclcpp::get_logger("VescHwInterface"), "No joint position limits found in URDF, using default limits");
+    }
+    homing_position_ = lower_limit_;
+    if (info_.hardware_parameters.find("homing_position") != info_.hardware_parameters.end()) {
+      homing_position_ = std::stod(info_.hardware_parameters["homing_position"]);
     }
 
     // initializes the servo controller
@@ -328,13 +334,19 @@ hardware_interface::return_type VescHwInterface::write(const rclcpp::Time & /*ti
     servo_controller_.setTargetPosition(command);
     servo_controller_.control(1.0 / period.seconds());
   } else if (command_mode_ == "position") {
-    auto command_step = command / gear_ratio_ * (num_hall_sensors_ * num_rotor_poles_);
+    // auto commands = command;
     if (joint_type_ == "revolute") {
-      command_step = command_step / (2.0 * M_PI);
+      command = command / (2.0 * M_PI);
     } else if (joint_type_ == "prismatic") {
-      command_step = command_step / screw_lead_;
+      command = command / screw_lead_;
+      command = 180.0 * (command - homing_position_) / (upper_limit_ - lower_limit_);
     }
-    vesc_interface_->setPosition(command_step);
+
+    command = std::fmod(command + homing_offset_ + 360.0, 360.0);
+    std::cout << "===>" << std::endl;
+    std::cout << "Command position: " << command << std::endl;
+    std::cout << "Homing offset: " << homing_offset_ << std::endl;
+    if (!std::isnan(command)) vesc_interface_->setPosition(command);
   } else if (command_mode_ == "velocity") {
     // limit_velocity_interface_.enforceLimits(period);
 
@@ -391,9 +403,27 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
 
     const double current = values->getMotorCurrent();
     const double velocity_rpm = values->getVelocityERPM() / static_cast<double>(num_rotor_poles_ / 2);
-    const double position_norm = values->getPosition();
+    const double position_norm = values->getPosition();  // unit: deg
 
-    position_ = position_norm * gear_ratio_;          // unit: deg
+    if (!init_) {
+      homing_offset_ = position_norm;
+      init_ = true;
+    }
+    // if (position_norm >= homing_offset_){
+    //   position_ = position_norm - homing_offset_;
+    // }
+    // else {
+    //   position_ = position_norm - homing_offset_ + 360.0;
+    // }
+    // position_ = std::fmod(position_, 360.0);
+    position_ = std::fmod(position_norm - homing_offset_ + 360.0, 360.0);
+    // position_ = position_norm - homing_offset_;
+
+    std::cout << "---" << std::endl;
+    std::cout << "Read position: " << position_norm << std::endl;
+    const double steps = values->getTachometer();
+
+    // position_ = position_norm * gear_ratio_;          // unit: deg
     velocity_ = velocity_rpm * gear_ratio_;           // unit: rpm
     effort_ = current * torque_const_ / gear_ratio_;  // unit: Nm or N
 
@@ -401,11 +431,11 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
       position_ = position_ * M_PI / 180.0;       // unit: rad
       velocity_ = velocity_ / 60.0 * 2.0 * M_PI;  // unit: rad/s
     } else if (joint_type_ == "prismatic") {
-      position_ = (position_ / 360.0) * screw_lead_;  // unit: m
+      position_ = (position_ / 180.0) * screw_lead_;  // unit: m
       velocity_ = velocity_ / 60.0 * screw_lead_;     // unit: m/s
     }
-    position_ = lower_limit_ + position_ * (upper_limit_ - lower_limit_); // map to joint limits
-    position_ -= servo_controller_.getZeroPosition();
+    position_ = homing_position_ + position_ * (upper_limit_ - lower_limit_);  // map to joint limits
+    // position_ -= servo_controller_.getZeroPosition();
   }
 
   return;
