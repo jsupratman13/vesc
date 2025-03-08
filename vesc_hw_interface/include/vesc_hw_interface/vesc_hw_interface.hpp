@@ -63,7 +63,7 @@ private:
   std::string joint_name_, command_mode_, port_;
   std::string joint_type_;
   double upper_limit_, lower_limit_;
-  bool init_;
+  bool homing_enabled_;
   double homing_offset_;
   double homing_position_;
 
