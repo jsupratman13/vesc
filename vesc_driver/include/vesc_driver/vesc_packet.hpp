@@ -203,7 +203,7 @@ private:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Packet for requesting retrun packets
+ * @brief Packet for requesting return packets
  **/
 class VescPacketRequestValues : public VescPacket
 {
@@ -211,6 +211,17 @@ public:
   VescPacketRequestValues();
 };
 
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Packet for requesting return packets
+ **/
+ class VescPacketRequestValuesSetup : public VescPacket
+ {
+ public:
+   VescPacketRequestValuesSetup();
+ };
+ 
 /*------------------------------------------------------------------*/
 
 /**

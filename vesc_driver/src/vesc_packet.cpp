@@ -350,7 +350,7 @@ double VescPacketValues::readBuffer(const uint8_t map_id, const uint8_t size) co
 /**
  * @brief Constructor
  **/
-VescPacketRequestValues::VescPacketRequestValues() : VescPacket("RequestFWVersion", 1, COMM_GET_VALUES)
+VescPacketRequestValues::VescPacketRequestValues() : VescPacket("RequestValues", 1, COMM_GET_VALUES)
 {
   VescFrame::CRC crc_calc;
   crc_calc.process_bytes(&(*payload_end_.first), boost::distance(payload_end_));
@@ -358,6 +358,20 @@ VescPacketRequestValues::VescPacketRequestValues() : VescPacket("RequestFWVersio
   *(frame_.end() - 3) = static_cast<uint8_t>(crc >> 8);
   *(frame_.end() - 2) = static_cast<uint8_t>(crc & 0xFF);
 }
+
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Constructor
+ **/
+ VescPacketRequestValuesSetup::VescPacketRequestValuesSetup() : VescPacket("RequestValuesSetup", 1, COMM_GET_VALUES_SETUP)
+ {
+   VescFrame::CRC crc_calc;
+   crc_calc.process_bytes(&(*payload_end_.first), boost::distance(payload_end_));
+   uint16_t crc = crc_calc.checksum();
+   *(frame_.end() - 3) = static_cast<uint8_t>(crc >> 8);
+   *(frame_.end() - 2) = static_cast<uint8_t>(crc & 0xFF);
+ }
 
 /*------------------------------------------------------------------*/
 

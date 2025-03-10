@@ -198,7 +198,7 @@ enum COMM_PACKET_ID
 };
 
 /**
- * @brief Map of return packets
+ * @brief Map of return packets of COMM_GET_VALUES
  **/
 enum PACKET_MAP
 {
@@ -224,5 +224,35 @@ enum PACKET_MAP
   VD = 65,
   VQ = 69,
 };
+
+/**
+ * @brief Map of return packets of COMM_GET_VALUES_SETUP
+ **/
+enum class PACKET_MAP_SETUP
+{
+  TEMP_MOS = 1,
+  TEMP_MOTOR = 3,
+  TOTAL_CURRENT_MOTOR = 5,
+  TOTAL_CURRENT_IN = 9,
+  DUTY_NOW = 13,
+  ERPM = 15,
+  SPEED = 19,
+  VOLTAGE_IN = 23,
+  BATTERY_LEVEL = 25,
+  TOTAL_AMP_HOURS = 27,
+  TOTAL_AMP_HOURS_CHARGED = 31,
+  TOTAL_WATT_HOURS = 35,
+  TOTAL_WATT_HOURS_CHARGED = 39,
+  DISTANCE = 43,
+  ABSOLUTE_DISTANCE = 47,
+  PID_POS = 51,
+  FAULT_CODE = 55,
+  CONTROLLER_ID = 56,
+  NUM_VESCS = 57,
+  BATTERY_REMAINING = 58,
+  ODOMETRY = 62,
+  SYSTEM_TIME = 66,
+ };
+ 
 
 #endif  // VESC_DRIVER_DATA_MAP_HPP_
