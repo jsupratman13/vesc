@@ -400,7 +400,7 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
       homing_offset_ = position_norm;
     }
 
-    auto position_ = std::fmod(position_norm - homing_offset_ + 360.0, 360.0);
+    position_ = std::fmod(position_norm - homing_offset_ + 360.0, 360.0);
     if (position_ > 180.0) {
       position_ -= 360.0;
     }
