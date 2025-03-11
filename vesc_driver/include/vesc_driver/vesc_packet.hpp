@@ -205,10 +205,10 @@ private:
 /**
  * @brief Gets values in COMM_GET_VALUES_SETUP return packets
  **/
-class VescPacketSetupValues : public VescPacket
+class VescPacketValuesSetup : public VescPacket
 {
 public:
-  explicit VescPacketSetupValues(std::shared_ptr<VescFrame> raw);
+  explicit VescPacketValuesSetup(std::shared_ptr<VescFrame> raw);
 
   double getMosTemp() const;
   double getMotorTemp() const;
