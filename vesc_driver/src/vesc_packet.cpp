@@ -344,6 +344,246 @@ double VescPacketValues::readBuffer(const uint8_t map_id, const uint8_t size) co
 
   return static_cast<double>(value);
 }
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Constructor
+ **/
+ VescPacketSetupValues::VescPacketSetupValues(std::shared_ptr<VescFrame> raw) : VescPacket("ValuesSetup", raw)
+{
+}
+
+/**
+ * @brief Gets temperature of MOSFETs
+ * @return Temperature of MOSFETs
+ **/
+double VescPacketSetupValues::getMosTemp() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TEMP_MOS), 2) / 10.0;
+}
+
+/**
+ * @brief Gets temperature of the motor
+ * @return Temperature of the motor
+ **/
+double VescPacketSetupValues::getMotorTemp() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TEMP_MOTOR), 2) / 10.0;
+}
+ 
+/**
+ * @brief Gets total motor current
+ * @return Total motor current
+ **/
+double VescPacketSetupValues::getTotalMotorCurrent() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_CURRENT_MOTOR), 4) / 100.0;
+}
+ 
+/**
+ * @brief Gets total input current
+ * @return Total input current
+ **/
+double VescPacketSetupValues::getTotalInputCurrent() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_CURRENT_IN), 4) / 100.0;
+}
+ 
+/**
+ * @brief Gets the current duty value
+ * @return The current duty value
+ **/
+double VescPacketSetupValues::getDuty() const
+{
+  int16_t duty_raw = static_cast<int32_t>(readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::DUTY_NOW), 2));
+
+  // inverts to derive a negative value
+  if (duty_raw > 1000)
+  {
+    duty_raw = !duty_raw;
+  }
+
+  return static_cast<double>(duty_raw) / 1000.0;
+}
+ 
+/**
+ * @brief Gets the current erpm
+ * @return The current erpm
+ **/
+double VescPacketSetupValues::getVelocityERPM() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::ERPM), 4);
+}
+
+/**
+ * @brief Gets the current velocity based on wheel diameter, gearing and motor poles
+ * @return The current velocity
+ **/
+double VescPacketSetupValues::getVelocity() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::SPEED), 4);
+}
+
+/**
+ * @brief Gets input voltage
+ * @return Input voltage
+ **/
+double VescPacketSetupValues::getInputVoltage() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::VOLTAGE_IN), 2) / 10.0;
+}
+
+/**
+ * @brief Get battery level
+ * @brief Battery level
+ **/
+double VescPacketSetupValues::getBatteryLevel() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::BATTERY_LEVEL), 2);
+}
+
+/**
+ * @brief Gets total consumed charge
+ * @return Total consumed charge
+ **/
+double VescPacketSetupValues::getTotalConsumedCharge() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_AMP_HOURS), 4) / 10000.0;
+}
+ 
+/**
+ * @brief Gets total input charge
+ * @return Total input charge
+ **/
+double VescPacketSetupValues::getTotalInputCharge() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_AMP_HOURS_CHARGED), 4) / 10000.0;
+}
+
+/**
+ * @brief Gets total consumed power
+ * @return Total consumed power
+ **/
+double VescPacketSetupValues::getTotalConsumedPower() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_WATT_HOURS), 4) / 10000.0;
+}
+
+/**
+ * @brief Gets total input power
+ * @return Total input power
+ **/
+double VescPacketSetupValues::getTotalInputPower() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_WATT_HOURS_CHARGED), 4) / 10000.0;
+}
+
+/**
+ * @brief Gets the distance traveled based on wheel diameter, gearing and motor poles
+ * @return The distance traveled
+ **/
+double VescPacketSetupValues::getDistance() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::DISTANCE), 4);
+}
+
+/**
+ * @brief Gets the distance traveled based on wheel diameter, gearing and motor poles
+ * @return The absolute distance traveled
+ **/
+double VescPacketSetupValues::getAbsDistance() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::ABSOLUTE_DISTANCE), 4);
+}
+
+/**
+ * @brief Gets the position in deg.
+ * @return The current position between 0 to 360 deg.
+ **/
+double VescPacketSetupValues::getPosition() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::PID_POS), 4) / 1000000.0;
+}
+
+/**
+ * @brief Gets fault code
+ * @return Fault code
+ **/
+int VescPacketSetupValues::getFaultCode() const
+{
+  return static_cast<int32_t>(*(payload_end_.first + static_cast<uint8_t>(PACKET_VALUES_SETUP::FAULT_CODE)));
+}
+
+/**
+ * @brief Gets controller id
+ * @return Fault code
+ **/
+int VescPacketSetupValues::getControllerID() const
+{
+  return static_cast<int32_t>(*(payload_end_.first + static_cast<uint8_t>(PACKET_VALUES_SETUP::CONTROLLER_ID)));
+}
+
+/**
+ * @brief Gets controller id
+ * @return Fault code
+ **/
+int VescPacketSetupValues::getNumVescs() const
+{
+  return static_cast<int32_t>(*(payload_end_.first + static_cast<uint8_t>(PACKET_VALUES_SETUP::NUM_VESCS)));
+}
+
+/**
+ * @brief Get battery level
+ * @brief Battery level
+ **/
+double VescPacketSetupValues::getBatteryRemaining() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::BATTERY_REMAINING), 4);
+}
+
+/**
+ * @brief Gets current odometer value in meters
+ * @return The odometer value in meters
+ **/
+double VescPacketSetupValues::getOdometer() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::ODOMETER), 4);
+}
+
+/**
+ * @brief Gets the current system times in ticks
+ * @return The system time in ticks
+ **/
+double VescPacketSetupValues::getSystemTime() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::SYSTEM_TIME), 4);
+}
+
+/**
+ * @brief Reads a value from the buffer
+ * @param map_id start address to read
+ * @param size the number of bytes to read
+ * @return Required value
+ **/
+double VescPacketSetupValues::readBuffer(const uint8_t map_id, const uint8_t size) const
+{
+  int32_t value = 0;
+  switch (size)
+  {
+    case 2:
+      value += static_cast<int32_t>(*(payload_end_.first + map_id) << 8);
+      value += static_cast<int32_t>(*(payload_end_.first + map_id + 1));
+      break;
+    case 4:
+      value += static_cast<int32_t>(*(payload_end_.first + map_id) << 24);
+      value += static_cast<int32_t>(*(payload_end_.first + map_id + 1) << 16);
+      value += static_cast<int32_t>(*(payload_end_.first + map_id + 2) << 8);
+      value += static_cast<int32_t>(*(payload_end_.first + map_id + 3));
+      break;
+  }
+
+  return static_cast<double>(value);
+}
 
 /*------------------------------------------------------------------*/
 

@@ -228,7 +228,7 @@ enum PACKET_MAP
 /**
  * @brief Map of return packets of COMM_GET_VALUES_SETUP
  **/
-enum class PACKET_MAP_SETUP
+enum class PACKET_VALUES_SETUP : uint8_t
 {
   TEMP_MOS = 1,
   TEMP_MOTOR = 3,
@@ -250,7 +250,7 @@ enum class PACKET_MAP_SETUP
   CONTROLLER_ID = 56,
   NUM_VESCS = 57,
   BATTERY_REMAINING = 58,
-  ODOMETRY = 62,
+  ODOMETER = 62,
   SYSTEM_TIME = 66,
  };
  

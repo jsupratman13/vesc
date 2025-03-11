@@ -147,7 +147,7 @@ typedef std::shared_ptr<VescPacket const> VescPacketConstPtr;
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Farmware version
+ * @brief Firmware version
  **/
 class VescPacketFWVersion : public VescPacket
 {
@@ -161,7 +161,7 @@ public:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Requests farmware version
+ * @brief Requests firmware version
  **/
 class VescPacketRequestFWVersion : public VescPacket
 {
@@ -172,7 +172,7 @@ public:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Gets values in return packets
+ * @brief Gets values in COMM_GET_VALUES return packets
  **/
 class VescPacketValues : public VescPacket
 {
@@ -203,7 +203,44 @@ private:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Packet for requesting return packets
+ * @brief Gets values in COMM_GET_VALUES_SETUP return packets
+ **/
+class VescPacketSetupValues : public VescPacket
+{
+public:
+  explicit VescPacketSetupValues(std::shared_ptr<VescFrame> raw);
+
+  double getMosTemp() const;
+  double getMotorTemp() const;
+  double getTotalMotorCurrent() const;
+  double getTotalInputCurrent() const;
+  double getDuty() const;
+  double getVelocityERPM() const;
+  double getVelocity() const;
+  double getInputVoltage() const;
+  double getBatteryLevel() const;
+  double getTotalConsumedCharge() const;
+  double getTotalInputCharge() const;
+  double getTotalConsumedPower() const;
+  double getTotalInputPower() const;
+  double getDistance() const;
+  double getAbsDistance() const;
+  double getPosition() const;
+  int getFaultCode() const;
+  int getControllerID() const;
+  int getNumVescs() const;
+  double getBatteryRemaining() const;
+  double getOdometer() const;
+  double getSystemTime() const;
+
+private:
+  double readBuffer(const uint8_t, const uint8_t) const;
+};
+
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Packet for requesting COMM_GET_VALUES return packets
  **/
 class VescPacketRequestValues : public VescPacket
 {
@@ -214,7 +251,7 @@ public:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Packet for requesting return packets
+ * @brief Packet for requesting COMM_GET_VALUES_SETUP return packets
  **/
  class VescPacketRequestValuesSetup : public VescPacket
  {
