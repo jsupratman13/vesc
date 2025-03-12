@@ -203,6 +203,17 @@ private:
 /*------------------------------------------------------------------*/
 
 /**
+ * @brief Packet for requesting COMM_GET_VALUES return packets
+ **/
+class VescPacketRequestValues : public VescPacket
+{
+public:
+  VescPacketRequestValues();
+};
+
+/*------------------------------------------------------------------*/
+
+/**
  * @brief Gets values in COMM_GET_VALUES_SETUP return packets
  **/
 class VescPacketValuesSetup : public VescPacket
@@ -240,24 +251,41 @@ private:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Packet for requesting COMM_GET_VALUES return packets
+ * @brief Packet for requesting COMM_GET_VALUES_SETUP return packets
  **/
-class VescPacketRequestValues : public VescPacket
+class VescPacketRequestValuesSetup : public VescPacket
 {
 public:
-  VescPacketRequestValues();
+  VescPacketRequestValuesSetup();
 };
 
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Packet for requesting COMM_GET_VALUES_SETUP return packets
+ * @brief Gets values in COMM_GET_MCCONF return packets
  **/
- class VescPacketRequestValuesSetup : public VescPacket
- {
- public:
-   VescPacketRequestValuesSetup();
- };
+class VescPacketMCConf : public VescPacket
+{
+public:
+  explicit VescPacketMCConf(std::shared_ptr<VescFrame> raw);
+
+  MCConfiguration getConfig() const;
+
+private:
+  MCConfiguration config_;
+  double readBuffer(const int, const uint8_t) const;
+};
+
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Packet for requesting COMM_GET_MCCONF return packets
+ **/
+class VescPacketRequestMCConf : public VescPacket
+{
+public:
+  VescPacketRequestMCConf();
+};
  
 /*------------------------------------------------------------------*/
 

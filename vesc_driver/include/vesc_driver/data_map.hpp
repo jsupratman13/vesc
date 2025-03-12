@@ -255,117 +255,325 @@ enum class PACKET_VALUES_SETUP : uint8_t
   SYSTEM_TIME = 66,
  };
 
-/**
- * @brief Map of return packets of COMM_GET_MCCONF
- **/
-enum class PACKET_MCCONF : uint8_t
-{
-  MCCONF_SIGNATURE = 1,
-  PWM_MODE = 5,
-  COMM_MODE = 6,
-  MOTOR_TYPE = 7,
-  SENSOR_MODE = 8,
-  L_CURRENT_MAX = 9,
-  L_CURRENT_MIN = 13,
-  L_IN_CURRENT_MAX = 17,
-  L_IN_CURRENT_MIN = 21,
-  L_IN_CURRENT_MAP_START = 25,
-  L_IN_CURRENT_MAP_FILTER = 27,
-  L_ABS_CURRENT_MAX = 29,
-  L_MIN_ERPM = 33,
-  L_MAX_ERPM = 37,
-  L_ERPM_START = 41,
-  L_MAX_ERPM_FBRAKE = 43,
-  L_MAX_ERPM_FBRAKE_CC = 47,
-  L_MIN_VIN = 51,
-  L_MAX_VIN = 53,
-  L_BATTERY_CUT_START = 55,
-  L_BATTERY_CUT_END = 57,
-  L_BATTERY_REGEN_CUT_START = 59,
-  L_BATTERY_REGEN_CUT_END = 61,
-  L_SLOW_ABS_CURRENT = 63,
-  L_TEMP_FET_START = 64,
-  L_TEMP_FET_END = 65,
-  L_TEMP_MOTOR_START = 66,
-  L_TEMP_MOTOR_END = 67,
-  L_TEMP_ACCEL_DEC = 68,
-  L_MIN_DUTY = 70,
-  L_MAX_DUTY = 72,
-  L_WATT_MAX = 74,
-  L_WATT_MIN = 78,
-  L_CURRENT_MAX_SCALE = 82,
-  L_CURRENT_MIN_SCALE = 84,
-  L_DUTY_START = 86,
-  SL_MIN_ERPM = 88,
-  SL_MIN_ERPM_CYCLE_INT_LIMIT = 92,
-  SL_MAX_FULLBREAK_CURRENT_DIR_CHANGE = 96,
-  SL_CYCLE_INT_LIMIT = 100,
-  SL_PHASE_ADVANCE_AT_BR = 102,
-  SL_CYCLE_INT_RPM_BR = 104,
-  SL_BEMF_COUPLING_K = 108,
-  HALL_TABLE_0 = 112,
-  HALL_TABLE_1 = 113,
-  HALL_TABLE_2 = 114,
-  HALL_TABLE_3 = 115,
-  HALL_TABLE_4 = 116,
-  HALL_TABLE_5 = 117,
-  HALL_TABLE_6 = 118,
-  HALL_TABLE_7 = 119,
-  HALL_SL_ERPM = 120,
-  FOC_CURRENT_KP = 124,
-  FOC_CURRENT_KI = 128,
-  FOC_F_ZV = 132,
-  FOC_DT_US = 136,
-  FOC_ENCODER_INVERTED = 140,
-  FOC_ENCODER_OFFSET = 141,
-  FOC_ENCODER_RATIO = 145,
-  FOC_SENSOR_MODE = 149,
-  FOC_PLL_KP = 150,
-  FOC_PLL_KI = 154,
-  FOC_MOTOR_L = 158,
-  FOC_MOTOR_LD_LQ_DIFF = 162,
-  FOC_MOTOR_R = 166,
-  FOC_MOTOR_FLUX_LINKAGE = 170,
-  FOC_OBSERVER_GAIN = 174,
-  FOC_OBSERVER_GAIN_SLOW = 178,
-  FOC_OBSERVER_OFFSET = 182,
-  FOC_DUTY_DOWNRAMP_KP = 184,
-  FOC_DUTY_DOWNRAMP_KI = 188,
-  FOC_START_CURR_DEC = 192,
-  FOC_START_CURR_DEC_RPM = 194,
-  FOC_OPENLOOP_RPM = 198,
-  FOC_OPENLOOP_RPM_LOW = 202,
-  FOC_D_GAIN_SCALE_START = 204,
-  FOC_D_GAIN_SCALE_MAX_MOD = 206,
-  FOC_SL_OPENLOOP_HYST = 208,
-  FOC_SL_OPENLOOP_TIME_LOCK = 210,
-  FOC_SL_OPENLOOP_TIME_RAMP = 212,
-  FOC_SL_OPENLOOP_TIME = 214,
-  FOC_SL_OPENLOOP_BOOST_Q = 216,
-  FOC_SL_OPENLOOP_MAX_Q = 218,
-  FOC_HALL_TABLE_0 = 220,
-  FOC_HALL_TABLE_1 = 221,
-  FOC_HALL_TABLE_2 = 222,
-  FOC_HALL_TABLE_3 = 223,
-  FOC_HALL_TABLE_4 = 224,
-  FOC_HALL_TABLE_5 = 225,
-  FOC_HALL_TABLE_6 = 226,
-  FOC_HALL_TABLE_7 = 227,
-  FOC_HALL_INTERP_ERPM = 228,
-  FOC_SL_ERPM_START = 232,
-  FOC_SL_ERPM = 236,
-  FOC_CONTROL_SAMPLE_MODE = 240,
-  FOC_CURRENT_SAMPLE_MODE = 241,
-  FOC_SAT_COMP_MODE = 242,
-  FOC_SAT_COMP = 243,
-  FOC_TEMP_COMP = 245,
-  FOC_TEMP_COMP_BASE_TEMP = 246,
-  FOC_CURRENT_FILTER_CONST = 248,
-  FOC_CC_DECOUPLING = 250,
-  FOC_OBSERVER_TYPE = 251,
-  FOC_HFI_AMB_MODE = 252,
-  FOC_HFI_AMB_CURRENT = 253,
-  FOC_HFI_AMB_TRES = 255
+enum PWM_MODE {
+  PWM_MODE_NONSYNCHRONOUS = 0,
+  PWM_MODE_SYNCHRONOUS,
+  PWM_MODE_BIPOLAR,
+};
+
+enum COMM_MODE {
+  COMM_MODE_INTEGRATE = 0,
+  COMM_MODE_DELAY,
+};
+
+enum SENSOR_MODE{
+  SENSOR_MODE_SENSORLESS = 0,
+  SENSOR_MODE_SENSORED,
+  SENSOR_MODE_HYBRID,
+};
+
+enum FOC_SENSOR_MODE {
+  FOC_SENSOR_MODE_SENSORLESS = 0,
+  FOC_SENSOR_MODE_ENCODER,
+  FOC_SENSOR_MODE_HALL,
+  FOC_SENSOR_MODE_HFI,
+  FOC_SENSOR_MODE_HFI_START,
+};
+
+enum SENSOR_PORT_MODE {
+  SENSOR_PORT_MODE_HALL = 0,
+	SENSOR_PORT_MODE_ABI,
+	SENSOR_PORT_MODE_AS5047_SPI,
+	SENSOR_PORT_MODE_AD2S1205,
+	SENSOR_PORT_MODE_SINCOS,
+	SENSOR_PORT_MODE_TS5700N8501,
+	SENSOR_PORT_MODE_TS5700N8501_MULTITURN,
+	SENSOR_PORT_MODE_MT6816_SPI
+};
+
+enum MOTOR_TYPE {
+  MOTOR_TYPE_BLD = 0,
+  MOTOR_TYPE_FOC,
+  MOTOR_TYPE_DC,
+  MOTOR_TYPE_GPD,
+};
+
+enum FOC_CC_DECOUPLING_MODE {
+	FOC_CC_DECOUPLING_DISABLED = 0,
+	FOC_CC_DECOUPLING_CROSS,
+	FOC_CC_DECOUPLING_BEMF,
+	FOC_CC_DECOUPLING_CROSS_BEMF
+};
+
+enum FOC_OBSERVER_TYPE {
+  FOC_OBSERVER_ORTEGA_ORIGINAL = 0,
+};
+
+enum FOC_HFI_SAMPLES {
+	HFI_SAMPLES_8 = 0,
+	HFI_SAMPLES_16,
+	HFI_SAMPLES_32
+};
+
+enum MTPA_MODE {
+	MTPA_MODE_OFF = 0,
+	MTPA_MODE_IQ_TARGET,
+	MTPA_MODE_IQ_MEASURED
+};
+
+enum PID_RATE {
+	PID_RATE_25_HZ = 0,
+	PID_RATE_50_HZ,
+	PID_RATE_100_HZ,
+	PID_RATE_250_HZ,
+	PID_RATE_500_HZ,
+	PID_RATE_1000_HZ,
+	PID_RATE_2500_HZ,
+	PID_RATE_5000_HZ,
+	PID_RATE_10000_HZ,
+};
+
+enum DRV8301_OC_MODE {
+	DRV8301_OC_LIMIT = 0,
+	DRV8301_OC_LATCH_SHUTDOWN,
+	DRV8301_OC_REPORT_ONLY,
+	DRV8301_OC_DISABLED
+};
+
+enum OUT_AUX_MODE {
+	OUT_AUX_MODE_OFF = 0,
+	OUT_AUX_MODE_ON_AFTER_2S,
+	OUT_AUX_MODE_ON_AFTER_5S,
+	OUT_AUX_MODE_ON_AFTER_10S,
+	OUT_AUX_MODE_UNUSED,
+	OUT_AUX_MODE_ON_WHEN_RUNNING,
+	OUT_AUX_MODE_ON_WHEN_NOT_RUNNING,
+	OUT_AUX_MODE_MOTOR_50,
+	OUT_AUX_MODE_MOSFET_50,
+	OUT_AUX_MODE_MOTOR_70,
+	OUT_AUX_MODE_MOSFET_70,
+	OUT_AUX_MODE_MOTOR_MOSFET_50,
+	OUT_AUX_MODE_MOTOR_MOSFET_70,
+};
+
+enum TEMP_SENSOR_TYPE {
+	TEMP_SENSOR_NTC_10K_25C = 0,
+	TEMP_SENSOR_PTC_1K_100C,
+	TEMP_SENSOR_KTY83_122,
+	TEMP_SENSOR_NTC_100K_25C,
+	TEMP_SENSOR_KTY84_130
+};
+
+enum BATTERY_TYPE {
+	BATTERY_TYPE_LIION_3_0__4_2,
+	BATTERY_TYPE_LIIRON_2_6__3_6,
+	BATTERY_TYPE_LEAD_ACID
+};
+
+enum BMS_TYPE {
+	BMS_TYPE_NONE = 0,
+	BMS_TYPE_VESC
+};
+
+enum BMS_FWD_CAN_MODE {
+	BMS_FWD_CAN_MODE_DISABLED = 0,
+	BMS_FWD_CAN_MODE_USB_ONLY,
+	BMS_FWD_CAN_MODE_ANY
+};
+
+struct BMS_CONFIG {
+	BMS_TYPE type;
+	double t_limit_start;
+	double t_limit_end;
+	double soc_limit_start;
+	double soc_limit_end;
+	BMS_FWD_CAN_MODE fwd_can_mode;
+};
+
+struct MCConfiguration {
+	// Limits
+	double l_current_max;
+	double l_current_min;
+	double l_in_current_max;
+	double l_in_current_min;
+	double l_abs_current_max;
+	double l_min_erpm;
+	double l_max_erpm;
+	double l_erpm_start;
+	double l_max_erpm_fbrake;
+	double l_max_erpm_fbrake_cc;
+	double l_min_vin;
+	double l_max_vin;
+	double l_battery_cut_start;
+	double l_battery_cut_end;
+	bool l_slow_abs_current;
+	double l_temp_fet_start;
+	double l_temp_fet_end;
+	double l_temp_motor_start;
+	double l_temp_motor_end;
+	double l_temp_accel_dec;
+	double l_min_duty;
+	double l_max_duty;
+	double l_watt_max;
+	double l_watt_min;
+	double l_current_max_scale;
+	double l_current_min_scale;
+	double l_duty_start;
+	// Overridden limits (Computed during runtime)
+	double lo_current_max;
+	double lo_current_min;
+	double lo_in_current_max;
+	double lo_in_current_min;
+	double lo_current_motor_max_now;
+	double lo_current_motor_min_now;
+
+	// BLDC switching and drive
+	PWM_MODE pwm_mode;
+	COMM_MODE comm_mode;
+	MOTOR_TYPE motor_type;
+	SENSOR_MODE sensor_mode;
+
+	// Sensorless (bldc)
+	double sl_min_erpm;
+	double sl_min_erpm_cycle_int_limit;
+	double sl_max_fullbreak_current_dir_change;
+	double sl_cycle_int_limit;
+	double sl_phase_advance_at_br;
+	double sl_cycle_int_rpm_br;
+	double sl_bemf_coupling_k;
+	// Hall sensor
+	int hall_table[8];
+	double hall_sl_erpm;
+
+	// FOC
+	double foc_current_kp;
+	double foc_current_ki;
+	double foc_f_zv;
+	double foc_dt_us;
+	double foc_encoder_offset;
+	bool foc_encoder_inverted;
+	double foc_encoder_ratio;
+	double foc_encoder_sin_offset;
+	double foc_encoder_sin_gain;
+	double foc_encoder_cos_offset;
+	double foc_encoder_cos_gain;
+	double foc_encoder_sincos_filter_constant;
+	double foc_motor_l;
+	double foc_motor_ld_lq_diff;
+	double foc_motor_r;
+	double foc_motor_flux_linkage;
+	double foc_observer_gain;
+	double foc_observer_gain_slow;
+	double foc_observer_offset;
+	double foc_pll_kp;
+	double foc_pll_ki;
+	double foc_duty_dowmramp_kp;
+	double foc_duty_dowmramp_ki;
+	double foc_openloop_rpm;
+	double foc_openloop_rpm_low;
+	double foc_d_gain_scale_start;
+	double foc_d_gain_scale_max_mod;
+	double foc_sl_openloop_hyst;
+	double foc_sl_openloop_time;
+	double foc_sl_openloop_time_lock;
+	double foc_sl_openloop_time_ramp;
+	FOC_SENSOR_MODE foc_sensor_mode;
+	int foc_hall_table[8];
+	double foc_hall_interp_erpm;
+	double foc_sl_erpm;
+	bool foc_sample_v0_v7;
+	bool foc_sample_high_current;
+	double foc_sat_comp;
+	bool foc_temp_comp;
+	double foc_temp_comp_base_temp;
+	double foc_current_filter_const;
+	FOC_CC_DECOUPLING_MODE foc_cc_decoupling;
+	FOC_OBSERVER_TYPE foc_observer_type;
+	double foc_hfi_voltage_start;
+	double foc_hfi_voltage_run;
+	double foc_hfi_voltage_max;
+	double foc_sl_erpm_hfi;
+	uint16_t foc_hfi_start_samples;
+	double foc_hfi_obs_ovr_sec;
+	FOC_HFI_SAMPLES foc_hfi_samples;
+	bool foc_offsets_cal_on_boot;
+	double foc_offsets_current[3];
+	double foc_offsets_voltage[3];
+	double foc_offsets_voltage_undriven[3];
+	bool foc_phase_filter_enable;
+	double foc_phase_filter_max_erpm;
+	MTPA_MODE foc_mtpa_mode;
+	// Field Weakening
+	double foc_fw_current_max;
+	double foc_fw_duty_start;
+	double foc_fw_ramp_time;
+	double foc_fw_q_current_factor;
+
+	// GPDrive
+	int gpd_buffer_notify_left;
+	int gpd_buffer_interpol;
+	double gpd_current_filter_const;
+	double gpd_current_kp;
+	double gpd_current_ki;
+
+	PID_RATE sp_pid_loop_rate;
+
+	// Speed PID
+	double s_pid_kp;
+	double s_pid_ki;
+	double s_pid_kd;
+	double s_pid_kd_filter;
+	double s_pid_min_erpm;
+	bool s_pid_allow_braking;
+	double s_pid_ramp_erpms_s;
+
+	// Pos PID
+	double p_pid_kp;
+	double p_pid_ki;
+	double p_pid_kd;
+	double p_pid_kd_proc;
+	double p_pid_kd_filter;
+	double p_pid_ang_div;
+	double p_pid_gain_dec_angle;
+	double p_pid_offset;
+
+	// Current controller
+	double cc_startup_boost_duty;
+	double cc_min_current;
+	double cc_gain;
+	double cc_ramp_step_max;
+
+	// Misc
+	int32_t m_fault_stop_time_ms;
+	double m_duty_ramp_step;
+	double m_current_backoff_gain;
+	uint32_t m_encoder_counts;
+	SENSOR_PORT_MODE m_sensor_port_mode;
+	bool m_invert_direction;
+	DRV8301_OC_MODE m_drv8301_oc_mode;
+	int m_drv8301_oc_adj;
+	double m_bldc_f_sw_min;
+	double m_bldc_f_sw_max;
+	double m_dc_f_sw;
+	double m_ntc_motor_beta;
+	OUT_AUX_MODE m_out_aux_mode;
+	TEMP_SENSOR_TYPE m_motor_temp_sens_type;
+	double m_ptc_motor_coeff;
+	int m_hall_extra_samples;
+	// Setup info
+	int si_motor_poles;
+	double si_gear_ratio;
+	double si_wheel_diameter;
+	BATTERY_TYPE si_battery_type;
+	int si_battery_cells;
+	double si_battery_ah;
+	double si_motor_nl_current;
+
+	// BMS Configuration
+	BMS_CONFIG bms;
+
+	// Protect from flash corruption.
+	uint16_t crc;
 };
 
 #endif  // VESC_DRIVER_DATA_MAP_HPP_

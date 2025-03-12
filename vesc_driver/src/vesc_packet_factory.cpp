@@ -184,7 +184,7 @@ void VescPacketFactory::registerPacketType(int payload_id, CreateFn fn)
 }
 
 /**
- * @brief Constructa a map on first use
+ * @brief Construct a map on first use
  * @return Pointer to the constructed map
  **/
 VescPacketFactory::FactoryMap* VescPacketFactory::getMap()
@@ -196,5 +196,6 @@ VescPacketFactory::FactoryMap* VescPacketFactory::getMap()
 REGISTER_PACKET_TYPE(COMM_FW_VERSION, VescPacketFWVersion)
 REGISTER_PACKET_TYPE(COMM_GET_VALUES, VescPacketValues)
 REGISTER_PACKET_TYPE(COMM_GET_VALUES_SETUP, VescPacketValuesSetup)
+REGISTER_PACKET_TYPE(COMM_GET_MCCONF, VescPacketMCConf)
 
 }  // namespace vesc_driver
