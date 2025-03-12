@@ -125,6 +125,7 @@ public:
   void requestFWVersion();
   void requestState();
   void requestStateSetup();
+  void requestMCConfiguration();
   void setDutyCycle(double duty_cycle);
   void setCurrent(double current);
   void setBrake(double brake);

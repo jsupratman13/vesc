@@ -274,6 +274,8 @@ public:
 private:
   MCConfiguration config_;
   double readBuffer(const int, const uint8_t) const;
+  double readAutoBuffer(const int, bool mode = true) const;
+  uint32_t readBufferUint32(const int) const;
 };
 
 /*------------------------------------------------------------------*/

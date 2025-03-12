@@ -276,6 +276,11 @@ void VescInterface::requestStateSetup()
   send(VescPacketRequestValuesSetup());
 }
 
+void VescInterface::requestMCConfiguration()
+{
+  send(VescPacketRequestMCConf());
+}
+
 void VescInterface::setDutyCycle(double duty_cycle)
 {
   send(VescPacketSetDuty(duty_cycle));
