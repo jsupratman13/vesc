@@ -16,7 +16,6 @@
 
 #include "vesc_hw_interface/vesc_hw_interface.hpp"
 
-#include <angles/angles.h>
 #include <tinyxml2.h>
 
 #include <hardware_interface/actuator_interface.hpp>
@@ -24,6 +23,7 @@
 #include <rclcpp/clock.hpp>
 #include <rclcpp/duration.hpp>
 #include <rclcpp/utilities.hpp>
+#include <vesc_driver/data_map.hpp>
 
 namespace vesc_hw_interface
 {
@@ -228,6 +228,8 @@ CallbackReturn VescHwInterface::on_configure(const rclcpp_lifecycle::State & /*p
     wheel_controller_.setHallSensors(num_hall_sensors_);
   }
 
+  vesc_interface_->requestMCConfiguration();
+
   RCLCPP_INFO(rclcpp::get_logger("VescHwInterface"), "Successfully configured!");
 
   return CallbackReturn::SUCCESS;
@@ -311,10 +313,6 @@ hardware_interface::return_type VescHwInterface::read(
     vesc_interface_->requestState();
   }
 
-  if (joint_type_ == "revolute") {
-    position_ = angles::normalize_angle(position_);
-  }
-
   return hardware_interface::return_type::OK;
 }
 
@@ -394,17 +392,23 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
 
     const double current = values->getMotorCurrent();
     const double velocity_rpm = values->getVelocityERPM() / static_cast<double>(num_rotor_poles_ / 2);
-    const double position_norm = values->getPosition();
+    const double position = values->getPosition();
+    // const double steps = static_cast<int32_t>(values->getTachometer());
 
     if (homing_enabled_) {
-      homing_offset_ = position_norm;
+      homing_offset_ = position;
     }
 
-    position_ = std::fmod(position_norm - homing_offset_ + 360.0, 360.0);
-    if (position_ > 180.0) {
-      position_ -= 360.0;
+    if (joint_type_ == "revolute" || joint_type_ == "prismatic") {
+      // `position` is in deg but here we mapped the position to the joint limits hence unit is irrelevant
+      position_ = std::fmod(position - homing_offset_ + 360.0, 360.0);
+      if (position_ > 180.0) {
+        position_ -= 360.0;
+      }
+      position_ = homing_position_ + position_ * (upper_limit_ - lower_limit_) / 180.0;
+    } else {
+      // position_ = steps / (num_hall_sensors_ * num_rotor_poles_) * gear_ratio_;
     }
-    position_ = homing_position_ + position_ * (upper_limit_ - lower_limit_) / 180.0;  // unit: rad or m
 
     velocity_ = velocity_rpm * gear_ratio_;  // unit: rpm
     if (joint_type_ == "revolute" || joint_type_ == "continuous") {
@@ -414,6 +418,21 @@ void VescHwInterface::packetCallback(const std::shared_ptr<VescPacket const> & p
     }
 
     effort_ = current * torque_const_ / gear_ratio_;  // unit: Nm or N
+  } else if (packet->getName() == "MCConfiguration") {
+    std::shared_ptr<VescPacketMCConf const> mc_conf = std::dynamic_pointer_cast<VescPacketMCConf const>(packet);
+
+    auto config = mc_conf->getConfig();
+    num_rotor_poles_ = config.si_motor_poles;
+    gear_ratio_ = config.si_gear_ratio;
+    if (config.motor_type == MOTOR_TYPE_FOC) {
+      auto pole_pairs = num_rotor_poles_ / 2.0;
+      auto flux_linkage = config.foc_motor_flux_linkage;
+      torque_const_ = (60.0 / (2.0 * M_PI * pole_pairs)) * flux_linkage;
+    }
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("VescHwInterface"), "Extracted configuration from VESC:");
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("VescHwInterface"), "  - Number of rotor poles: " << num_rotor_poles_);
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("VescHwInterface"), "  - Gear ratio: " << gear_ratio_);
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("VescHwInterface"), "  - Torque constant: " << torque_const_);
   }
 
   return;
