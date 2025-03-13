@@ -136,6 +136,8 @@ public:
 protected:
   VescPacket(const std::string& name, const int16_t payload_size, const int16_t payload_id);
   VescPacket(const std::string& name, std::shared_ptr<VescFrame> raw);
+  double readBuffer(const uint8_t, const uint8_t) const;
+  double readAutoBuffer(const int) const;
 
 private:
   std::string name_;
@@ -195,9 +197,6 @@ public:
   int getFaultCode() const;
   double getPosition() const;
   int getControllerID() const;
-
-private:
-  double readBuffer(const uint8_t, const uint8_t) const;
 };
 
 /*------------------------------------------------------------------*/
@@ -214,54 +213,6 @@ public:
 /*------------------------------------------------------------------*/
 
 /**
- * @brief Gets values in COMM_GET_VALUES_SETUP return packets
- **/
-class VescPacketValuesSetup : public VescPacket
-{
-public:
-  explicit VescPacketValuesSetup(std::shared_ptr<VescFrame> raw);
-
-  double getMosTemp() const;
-  double getMotorTemp() const;
-  double getTotalMotorCurrent() const;
-  double getTotalInputCurrent() const;
-  double getDuty() const;
-  double getVelocityERPM() const;
-  double getVelocity() const;
-  double getInputVoltage() const;
-  double getBatteryLevel() const;
-  double getTotalConsumedCharge() const;
-  double getTotalInputCharge() const;
-  double getTotalConsumedPower() const;
-  double getTotalInputPower() const;
-  double getDistance() const;
-  double getAbsDistance() const;
-  double getPosition() const;
-  int getFaultCode() const;
-  int getControllerID() const;
-  int getNumVescs() const;
-  double getBatteryRemaining() const;
-  double getOdometer() const;
-  double getSystemTime() const;
-
-private:
-  double readBuffer(const uint8_t, const uint8_t) const;
-};
-
-/*------------------------------------------------------------------*/
-
-/**
- * @brief Packet for requesting COMM_GET_VALUES_SETUP return packets
- **/
-class VescPacketRequestValuesSetup : public VescPacket
-{
-public:
-  VescPacketRequestValuesSetup();
-};
-
-/*------------------------------------------------------------------*/
-
-/**
  * @brief Gets values in COMM_GET_MCCONF return packets
  **/
 class VescPacketMCConf : public VescPacket
@@ -273,9 +224,6 @@ public:
 
 private:
   MCConfiguration config_;
-  double readBuffer(const int, const uint8_t) const;
-  double readAutoBuffer(const int, bool mode = true) const;
-  uint32_t readBufferUint32(const int) const;
 };
 
 /*------------------------------------------------------------------*/

@@ -255,6 +255,9 @@ enum class PACKET_VALUES_SETUP : uint8_t
   SYSTEM_TIME = 66,
 };
 
+/**
+ * @brief Modes and types
+ **/
 enum PWM_MODE
 {
   PWM_MODE_NONSYNCHRONOUS_HISW = 0,
@@ -398,6 +401,9 @@ enum BMS_FWD_CAN_MODE
   BMS_FWD_CAN_MODE_ANY
 };
 
+/**
+ * @brief BMS configuration
+ **/
 struct BMS_CONFIG
 {
   BMS_TYPE type;
@@ -408,8 +414,12 @@ struct BMS_CONFIG
   BMS_FWD_CAN_MODE fwd_can_mode;
 };
 
+/**
+ * @brief MC configuration
+ **/
 struct MCConfiguration
 {
+  uint32_t signature;
   // Limits
   double l_current_max;
   double l_current_min;
@@ -447,14 +457,10 @@ struct MCConfiguration
   double lo_current_motor_min_now;
 
   // BLDC switching and drive
-//   PWM_MODE pwm_mode;
-//   COMM_MODE comm_mode;
-//   MOTOR_TYPE motor_type;
-//   SENSOR_MODE sensor_mode;
-  int pwm_mode;
-  int comm_mode;
-  int sensor_mode;
-  int motor_type;
+  PWM_MODE pwm_mode;
+  COMM_MODE comm_mode;
+  MOTOR_TYPE motor_type;
+  SENSOR_MODE sensor_mode;
 
   // Sensorless (bldc)
   double sl_min_erpm;
