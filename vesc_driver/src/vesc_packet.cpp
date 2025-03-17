@@ -383,6 +383,91 @@ VescPacketRequestValues::VescPacketRequestValues() : VescPacket("RequestValues",
 
 /**
  * @brief Constructor
+ * @param raw Pointer of VescFrame
+ **/
+VescPacketValuesSetup::VescPacketValuesSetup(std::shared_ptr<VescFrame> raw) : VescPacket("ValuesSetup", raw)
+{
+}
+
+/**
+ * @brief Gets total motor current
+ * @return Total motor current
+ **/
+double VescPacketValuesSetup::getTotalMotorCurrent() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::TOTAL_CURRENT_MOTOR), 4) / 100.0;
+}
+
+/**
+ * @brief Gets current velocity in ERPM
+ * @return Current ERPM
+ **/
+double VescPacketValuesSetup::getVelocityERPM() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::ERPM), 4);
+}
+
+/**
+ * @brief Gets current velocity with gear ratio, wheel radius, and motor pole pairs calculated
+ * @return Current velocity in m/s
+ **/
+double VescPacketValuesSetup::getVelocity() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::SPEED), 4) / 1000.0;
+}
+
+/**
+ * @brief Gets the current duty value
+ * @return The current duty value
+ **/
+double VescPacketValuesSetup::getDuty() const
+{
+  int16_t duty_raw = static_cast<int32_t>(readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::DUTY_NOW), 2));
+
+  // inverts to derive a negative value
+  if (duty_raw > 1000)
+  {
+    duty_raw = !duty_raw;
+  }
+
+  return static_cast<double>(duty_raw) / 1000.0;
+}
+
+/**
+ * @brief Gets the distance traveled in meters
+ * @return Current distance
+ **/
+double VescPacketValuesSetup::getDistance() const
+{
+  return readBuffer(static_cast<uint8_t>(PACKET_VALUES_SETUP::DISTANCE), 4) / 1000.0;
+}
+
+/**
+ * @brief Gets the position in deg.
+ * @return The current position between 0 to 360 deg.
+ **/
+double VescPacketValuesSetup::getPosition() const
+{
+  return readBuffer(PID_POS, 4) / 1000000.0;
+}
+/*------------------------------------------------------------------*/
+
+/**
+* @brief Constructor
+**/
+VescPacketRequestValuesSetup::VescPacketRequestValuesSetup() : VescPacket("RequestValuesSetup", 1, COMM_GET_VALUES_SETUP)
+{
+  VescFrame::CRC crc_calc;
+  crc_calc.process_bytes(&(*payload_end_.first), boost::distance(payload_end_));
+  uint16_t crc = crc_calc.checksum();
+  *(frame_.end() - 3) = static_cast<uint8_t>(crc >> 8);
+  *(frame_.end() - 2) = static_cast<uint8_t>(crc & 0xFF);
+}
+
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Constructor
  **/
 VescPacketMCConf::VescPacketMCConf(std::shared_ptr<VescFrame> raw) : VescPacket("MCConfiguration", raw)
 {

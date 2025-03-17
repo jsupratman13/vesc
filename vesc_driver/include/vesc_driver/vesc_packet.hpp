@@ -213,6 +213,35 @@ public:
 /*------------------------------------------------------------------*/
 
 /**
+ * @brief Gets values in COMM_GET_VALUES_SETUP return packets
+ **/
+class VescPacketValuesSetup : public VescPacket
+{
+public:
+  explicit VescPacketValuesSetup(std::shared_ptr<VescFrame> raw);
+
+  double getTotalMotorCurrent() const;
+  double getVelocityERPM() const;
+  double getVelocity() const;
+  double getDuty() const;
+  double getDistance() const;
+  double getPosition() const;
+};
+
+/*------------------------------------------------------------------*/
+
+/**
+ * @brief Packet for requesting COMM_GET_VALUES_SETUP return packets
+ **/
+class VescPacketRequestValuesSetup : public VescPacket
+{
+public:
+VescPacketRequestValuesSetup();
+};
+
+/*------------------------------------------------------------------*/
+
+/**
  * @brief Gets values in COMM_GET_MCCONF return packets
  **/
 class VescPacketMCConf : public VescPacket

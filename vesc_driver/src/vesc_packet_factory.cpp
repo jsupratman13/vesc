@@ -34,6 +34,7 @@
  ********************************************************************/
 
 #include "vesc_driver/vesc_packet_factory.hpp"
+#include "vesc_driver/data_map.hpp"
 
 namespace vesc_driver
 {
@@ -195,6 +196,7 @@ VescPacketFactory::FactoryMap* VescPacketFactory::getMap()
 
 REGISTER_PACKET_TYPE(COMM_FW_VERSION, VescPacketFWVersion)
 REGISTER_PACKET_TYPE(COMM_GET_VALUES, VescPacketValues)
+REGISTER_PACKET_TYPE(COMM_GET_VALUES_SETUP, VescPacketValuesSetup)
 REGISTER_PACKET_TYPE(COMM_GET_MCCONF, VescPacketMCConf)
 
 }  // namespace vesc_driver
