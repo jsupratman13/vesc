@@ -619,7 +619,7 @@ VescPacketMCConf::VescPacketMCConf(std::shared_ptr<VescFrame> raw) : VescPacket(
   config_.cc_min_current = readAutoBuffer(map_id); map_id += 4;
   config_.cc_gain = readAutoBuffer(map_id); map_id += 4;
   config_.cc_ramp_step_max = readAutoBuffer(map_id); map_id += 4;
-  config_.m_fault_stop_time_ms = readAutoBuffer(map_id); map_id += 4;
+  config_.m_fault_stop_time_ms = readBuffer(map_id, 4); map_id += 4;
   config_.m_duty_ramp_step = readAutoBuffer(map_id); map_id += 4;
   config_.m_current_backoff_gain = readAutoBuffer(map_id); map_id += 4;
   config_.m_encoder_counts = readAutoBuffer(map_id); map_id += 4;
@@ -627,10 +627,10 @@ VescPacketMCConf::VescPacketMCConf(std::shared_ptr<VescFrame> raw) : VescPacket(
   config_.m_invert_direction = static_cast<bool>(*(payload_end_.first + map_id)); map_id += 1;
   config_.m_drv8301_oc_mode = static_cast<DRV8301_OC_MODE>(*(payload_end_.first + map_id)); map_id += 1;
   config_.m_drv8301_oc_adj = static_cast<int>(*(payload_end_.first + map_id)); map_id += 1;
-  config_.m_bldc_f_sw_min = readAutoBuffer(map_id);
-  config_.m_bldc_f_sw_max = readAutoBuffer(map_id);
-  config_.m_dc_f_sw = readAutoBuffer(map_id);
-  config_.m_ntc_motor_beta = readAutoBuffer(map_id);
+  config_.m_bldc_f_sw_min = readAutoBuffer(map_id); map_id += 4;
+  config_.m_bldc_f_sw_max = readAutoBuffer(map_id); map_id += 4;
+  config_.m_dc_f_sw = readAutoBuffer(map_id); map_id += 4;
+  config_.m_ntc_motor_beta = readAutoBuffer(map_id); map_id += 4;
   config_.m_out_aux_mode = static_cast<OUT_AUX_MODE>(*(payload_end_.first + map_id)); map_id += 1;
   config_.m_motor_temp_sens_type = static_cast<TEMP_SENSOR_TYPE>(*(payload_end_.first + map_id)); map_id += 1;
   config_.m_ptc_motor_coeff = readAutoBuffer(map_id); map_id += 4;
