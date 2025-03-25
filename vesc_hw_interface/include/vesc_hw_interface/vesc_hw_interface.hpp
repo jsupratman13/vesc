@@ -17,8 +17,9 @@
 #ifndef VESC_HW_INTERFACE_VESC_HW_INTERFACE_HPP_
 #define VESC_HW_INTERFACE_VESC_HW_INTERFACE_HPP_
 
-#include "visibility_control.h"
 #include <hardware_interface/actuator_interface.hpp>
+
+#include "visibility_control.h"
 // #include <joint_limits_interface/joint_limits.h>
 // #include <joint_limits_interface/joint_limits_interface.h>
 // #include <joint_limits_interface/joint_limits_rosparam.h>
@@ -26,6 +27,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/state.hpp>
 #include <std_msgs/msg/float64.hpp>
+
 #include "vesc_driver/vesc_interface.hpp"
 #include "vesc_hw_interface/vesc_servo_controller.hpp"
 #include "vesc_hw_interface/vesc_wheel_controller.hpp"
@@ -34,8 +36,8 @@ namespace vesc_hw_interface
 {
 using vesc_driver::VescInterface;
 using vesc_driver::VescPacket;
-using vesc_driver::VescPacketValues;
 using vesc_driver::VescPacketMCConf;
+using vesc_driver::VescPacketValues;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class VescHwInterface : public hardware_interface::ActuatorInterface
@@ -43,17 +45,17 @@ class VescHwInterface : public hardware_interface::ActuatorInterface
 public:
   VescHwInterface();
 
-  CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
-  CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_cleanup(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_shutdown(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_error(const rclcpp_lifecycle::State& previous_state) override;
+  CallbackReturn on_init(const hardware_interface::HardwareInfo & info) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
-  hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
-  hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+  hardware_interface::return_type read(const rclcpp::Time & time, const rclcpp::Duration & period) override;
+  hardware_interface::return_type write(const rclcpp::Time & time, const rclcpp::Duration & period) override;
   rclcpp::Time getTime() const;
 
 private:
@@ -67,6 +69,9 @@ private:
   bool homing_enabled_;
   double homing_offset_;
   double homing_position_;
+  int32_t prev_steps_;
+  double position_steps_;
+  bool sensor_initialize_;
 
   double command_;
   double position_, velocity_, effort_;  // joint states
@@ -80,8 +85,8 @@ private:
   // joint_limits_interface::VelocityJointSaturationInterface limit_velocity_interface_;
   // joint_limits_interface::EffortJointSaturationInterface limit_effort_interface_;
 
-  void packetCallback(const std::shared_ptr<VescPacket const>&);
-  void errorCallback(const std::string&);
+  void packetCallback(const std::shared_ptr<VescPacket const> &);
+  void errorCallback(const std::string &);
 };
 
 }  // namespace vesc_hw_interface
